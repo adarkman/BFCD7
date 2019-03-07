@@ -48,16 +48,21 @@ class MemManager
         long PAGE_SIZE;
         mspace heap;
         pthread_mutex_t mutex;
+		size_t code_head;		// Top index in *base for code allocation 
 
     public:
         MemManager(size_t _vm_code_size = MB(128), size_t _vm_data_size = MB(128) );
         ~MemManager();
 
+		// Data allocation
         size_t getFreeSpace();
         void* alloc(size_t size);
         void free(void* ptr);
 
         char* strdup(const char* s);
+
+		// Code allocation
+		void* code_alloc(size_t size);
 
     private:
         bool createDataFile(size_t _vm_data_size);

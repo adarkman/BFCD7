@@ -10,7 +10,8 @@ MemManager::MemManager(size_t _vm_code_size, size_t _vm_data_size):
     data_fd (-1),
     base (NULL),
     PAGE_SIZE(sysconf(_SC_PAGE_SIZE)),
-    heap(NULL)
+    heap(NULL),
+	code_head(0)
 {
     pthread_mutex_init(&mutex, NULL);
     int page_count_data = (_vm_data_size/PAGE_SIZE)+1;
@@ -68,6 +69,13 @@ char* MemManager::strdup(const char* s)
     char* ds = (char*) this->alloc(strlen(s)+1);
     strcpy(ds, s);
     return ds;
+}
+
+void* MemManager::code_alloc(size_t size)
+{
+	void* ptr = ((char*)base)+size;
+	code_head += size;
+	if (size % sizeof(BCELL) != 0) { code_head += sizeof(BCELL) - size; }
 }
 
 //************************************************************ Private
