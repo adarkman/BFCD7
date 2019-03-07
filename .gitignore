@@ -15,4 +15,6 @@ tags
 *.bak
 libbfcd/config.h
 .depend
+/src/bfcd7-db
+/src/bfcd7-rb
 

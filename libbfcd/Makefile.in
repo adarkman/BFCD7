@@ -28,7 +28,7 @@ OBJS=itoa.o malloc.o memmanager.o
 prefix=@prefix@
 BIN_DIR=@exec_prefix@/bin
 MAN_DIR=@mandir@
-BFCD_DATA_DIR=@datadir@/bfcd7/lib
+BFCD_DATA_DIR=@datarootdir@/bfcd7/lib
 BFCD_LIB_DIR=@prefix@/lib
 BFCD_SHARE_DIR=@datarootdir@/bfcd7
 

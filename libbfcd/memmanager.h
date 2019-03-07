@@ -41,7 +41,8 @@ class exSystem: public exMemory
 class MemManager
 {
     protected:
-        size_t vm_data_size;
+        size_t vm_code_size;
+		size_t vm_data_size;
         int data_fd;
         void *base;
         long PAGE_SIZE;
@@ -49,7 +50,7 @@ class MemManager
         pthread_mutex_t mutex;
 
     public:
-        MemManager(size_t _vm_data_size = MB(128) );
+        MemManager(size_t _vm_code_size = MB(128), size_t _vm_data_size = MB(128) );
         ~MemManager();
 
         size_t getFreeSpace();

@@ -4,20 +4,23 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include "tools.h"
 
-MemManager::MemManager(size_t _vm_data_size):
+MemManager::MemManager(size_t _vm_code_size, size_t _vm_data_size):
     data_fd (-1),
     base (NULL),
     PAGE_SIZE(sysconf(_SC_PAGE_SIZE)),
     heap(NULL)
 {
     pthread_mutex_init(&mutex, NULL);
-    int page_count = (_vm_data_size/PAGE_SIZE)+1;
-    vm_data_size = PAGE_SIZE*page_count;
-    __DEBUG(printf("MemManager PAGES=%d SIZE=%ld Mb\n", page_count, vm_data_size/MB(1)));
-    if(!createDataFile(vm_data_size))
+    int page_count_data = (_vm_data_size/PAGE_SIZE)+1;
+    vm_data_size = PAGE_SIZE*page_count_data;
+	int page_count_code = (_vm_code_size/PAGE_SIZE)+1;
+	vm_code_size = PAGE_SIZE*page_count_code;
+    __CODE(printf("MemManager PAGES=%d SIZE=%ld Mb\n", page_count_data+page_count_code, (vm_data_size+vm_code_size)/MB(1)));
+    if(!createDataFile(vm_data_size+vm_code_size))
         throw exMemory("Error allocate VM data.");
-    heap = create_mspace_with_base(base, vm_data_size, 1);
+	heap = create_mspace_with_base(((char*)base)+vm_code_size, vm_data_size, 1);
     if(!heap)
         throw exMemory("Error creating mspace.");
 }
@@ -74,7 +77,7 @@ bool MemManager::createDataFile(size_t _vm_data_size)
     mktemp(ft);
     FILE* f = fopen(ft,"w+");
     if(!f) return false;
-    __DEBUG(printf("VM data file '%s'\n", ft));
+    __CODE(printf("VM data file '%s'\n", ft));
     for(size_t i=0; i<_vm_data_size+PAGE_SIZE; i++) fputc(0,f);
     data_fd = fileno(f);
     fsync(data_fd);
@@ -87,6 +90,6 @@ bool MemManager::createDataFile(size_t _vm_data_size)
         close(data_fd);
         return false;
     }
-    __DEBUG(printf("VM Mapped at 0x%p\n", base));
+    __CODE(printf("VM Mapped at 0x%p\n", base));
     return true;
 }

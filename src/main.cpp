@@ -9,6 +9,6 @@ int main(int argc, char* argv[])
 				  VERSION_NAME, VERSION_NUM, VERSION_DESCR, 
 				  VERSION_AUTHOR, 
 				  VERSION_COPYRIGHT))
-	MemManager mm(Mb(32));
+	MemManager mm(Mb(16),Mb(16));
     return 0;
 }

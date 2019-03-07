@@ -23,13 +23,17 @@ AC_PROG_CXX
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
 AC_PROG_LN_S
+AC_CHECK_PROG(MAKEDEP,makedepend,yes)
+if test "x$MAKEDEP" != "xyes" ; then
+	AC_MSG_ERROR(you must have 'makedepend' installed for compile BFCD7);
+fi
 
 dnl Checks for libraries.
 if test $HAVE_DL = "1" ; then 
-	AC_CHECK_LIB(dl,dlopen,,AC_MSG_ERROR(you must have libdl.so instaled to compile BFCD3))
+	AC_CHECK_LIB(dl,dlopen,,AC_MSG_ERROR(you must have libdl.so instaled for compile BFCD7))
 fi
-dnl AC_CHECK_LIB(gc,GC_malloc,,AC_MSG_ERROR(you mast have Boehm Garbage Collector installed to compile BFCD3))
-AC_CHECK_LIB(readline,readline,,AC_MSG_ERROR(you mast have libreadline installed to compile BFCD3))
+dnl AC_CHECK_LIB(gc,GC_malloc,,AC_MSG_ERROR(you must have Boehm Garbage Collector installed for compile BFCD7))
+AC_CHECK_LIB(readline,readline,,AC_MSG_ERROR(you must have libreadline installed for compile BFCD7))
 
 dnl Checks for header files.
 AC_HEADER_STDC
