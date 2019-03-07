@@ -41,7 +41,7 @@ CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \
 %.o: %.S
 	$(CC) $(CCFLAGS) -c $<
 
-all: depend $(NAME)
+all: $(NAME)
 
 install:
 	../mkinstalldirs $(BFCD_LIB_DIR)

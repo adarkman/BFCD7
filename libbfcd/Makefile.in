@@ -33,7 +33,8 @@ BFCD_LIB_DIR=@prefix@/lib
 BFCD_SHARE_DIR=@datarootdir@/bfcd7
 
 CADDFLAGS=@CFLAGS@
-CCFLAGS=-O2 -fPIC -I/usr/local/include $(CFLAGS) -DDATA_DIR=\"$(BFCD_DATA_DIR)/\" \
+INCLUDE_DIRS=-I/usr/local/include
+CCFLAGS=-O2 -fPIC $(INCLUDE_DIRS) $(CFLAGS) -DDATA_DIR=\"$(BFCD_DATA_DIR)/\" \
 	-DBASE_COMPILER=\"$(BFCD_DATA_DIR)/$(NAME)\" -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS)
 
 CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \
@@ -75,7 +76,7 @@ $(BFCD_LIB_NAME): $(OBJS)
 dep: depend
 
 depend: .depend
-	makedepend $(CCFLAGS) $(SRC) >/dev/null 2>&1
+	makedepend $(INCLUDE_DIRS) $(SRC) >/dev/null 2>&1
 
 .depend:
 	touch .depend
