@@ -1,0 +1,108 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define if type char is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
+#undef __CHAR_UNSIGNED__
+#endif
+
+/* Define if you have a working `mmap' system call.  */
+#undef HAVE_MMAP
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* The number of bytes in a char.  */
+#undef SIZEOF_CHAR
+
+/* The number of bytes in a int.  */
+#undef SIZEOF_INT
+
+/* The number of bytes in a int*.  */
+#undef SIZEOF_INTP
+
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
+
+/* The number of bytes in a short.  */
+#undef SIZEOF_SHORT
+
+/* The number of bytes in a unsigned char.  */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* Define if you have the abort function.  */
+#undef HAVE_ABORT
+
+/* Define if you have the dlclose function.  */
+#undef HAVE_DLCLOSE
+
+/* Define if you have the dlerror function.  */
+#undef HAVE_DLERROR
+
+/* Define if you have the dlopen function.  */
+#undef HAVE_DLOPEN
+
+/* Define if you have the dlsym function.  */
+#undef HAVE_DLSYM
+
+/* Define if you have the getopt function.  */
+#undef HAVE_GETOPT
+
+/* Define if you have the getpagesize function.  */
+#undef HAVE_GETPAGESIZE
+
+/* Define if you have the isprint function.  */
+#undef HAVE_ISPRINT
+
+/* Define if you have the isspace function.  */
+#undef HAVE_ISSPACE
+
+/* Define if you have the rewind function.  */
+#undef HAVE_REWIND
+
+/* Define if you have the shmat function.  */
+#undef HAVE_SHMAT
+
+/* Define if you have the shmctl function.  */
+#undef HAVE_SHMCTL
+
+/* Define if you have the shmdt function.  */
+#undef HAVE_SHMDT
+
+/* Define if you have the shmget function.  */
+#undef HAVE_SHMGET
+
+/* Define if you have the strncmp function.  */
+#undef HAVE_STRNCMP
+
+/* Define if you have the strncpy function.  */
+#undef HAVE_STRNCPY
+
+/* Define if you have the strtol function.  */
+#undef HAVE_STRTOL
+
+/* Define if you have the tmpfile function.  */
+#undef HAVE_TMPFILE
+
+/* Define if you have the <sys/ipc.h> header file.  */
+#undef HAVE_SYS_IPC_H
+
+/* Define if you have the <sys/mman.h> header file.  */
+#undef HAVE_SYS_MMAN_H
+
+/* Define if you have the <sys/shm.h> header file.  */
+#undef HAVE_SYS_SHM_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the dl library (-ldl).  */
+#undef HAVE_LIBDL
+
+#undef HAVE_POW10
+

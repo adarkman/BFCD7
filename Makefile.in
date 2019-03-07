@@ -1,0 +1,77 @@
+######################################################################
+# Makefile.in - Make file for BFCD7 - UNIX Portable Forth compiler
+# (C) Hell Design 2000, 2019
+# Author: Alexandr Darkman
+# All rights reserved.
+#
+# $Id: Makefile.in,v 1.2 2002/05/31 12:15:16 darkman Exp $
+#
+######################################################################
+
+MAKE=make
+CC=gcc
+CPP=g++
+LIBS=
+
+ARCH=@target@
+
+prefix=@prefix@
+BIN_DIR=@exec_prefix@/bin
+MAN_DIR=@mandir@
+BFCD_DATA_DIR=@datadir@/bfcd7
+BFCD_LIB_DIR=@prefix@/lib
+BFCD_SHARE_DIR=@datarootdir@
+
+
+LN=@LN_S@
+
+all:  
+#	$(MAKE) debug_clean
+	$(MAKE) debug
+#	$(MAKE) release_clean
+#	$(MAKE) release
+
+depend:
+	$(MAKE) depend -C libbfcd
+	$(MAKE) depend -C src
+	
+debug:	
+	$(MAKE) NAME=bfcd7-db CFLAGS=-D__DEBUG__ -C libbfcd
+	$(MAKE) NAME=bfcd7-db CFLAGS=-D__DEBUG__ -C src
+	
+release:
+	$(MAKE) depend -C src
+	$(MAKE) NAME=bfcd7-rb CFLAGS= -C src
+
+clean: debug_clean release_clean
+	$(MAKE) clean -C libbfcd
+
+debug_clean:	
+	$(MAKE) clean NAME=bfcd7-db -C src
+
+release_clean:	
+	$(MAKE) clean NAME=bfcd7-rb -C src
+
+binary_install:
+	$(MAKE) install NAME=bfcd3-db -C src
+	$(MAKE) install NAME=bfcd3-rb -C src
+
+bfcd3:
+	$(MAKE) clean NAME=bfcd3-d -C kernel 
+	$(MAKE) NAME=bfcd3-d BINARY_NAME=bfcd3-db -C kernel
+	$(MAKE) clean NAME=bfcd3-r -C kernel
+	$(MAKE) NAME=bfcd3-r BINARY_NAME=bfcd3-rb -C kernel
+
+bfcd7_install:
+#	$(MAKE) install NAME=bfcd3-d -C kernel
+#	$(MAKE) install NAME=bfcd3-r -C kernel
+#	rm -f $(BIN_DIR)/bfcd3
+#	$(LN) $(BIN_DIR)/bfcd3-d $(BIN_DIR)/bfcd3
+	
+example:
+#	$(MAKE) -C examples
+
+lib_install:
+	./mkinstalldirs $(BFCD_LIB_DIR)
+	$(MAKE) install -C lib
+

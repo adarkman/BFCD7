@@ -1,0 +1,73 @@
+######################################################################
+# Makefile.in - Make file for BFCD3 - UNIX Portable Forth compiler
+# (C) Hell Design 2000
+# Author: Alexandr Darkman
+# All rights reserved.
+#
+# $Id: Makefile.in,v 1.2 2002/05/31 12:23:58 darkman Exp $
+#
+######################################################################
+
+MAKE=@gnumake@
+CC=@CC@
+CPP=@CXX@
+LIBS=@LIBS@ -L../libbfcd -lbfcd -lm -lstdc++
+INSTALL=@INSTALL@
+
+ARCH=@target@
+
+SRC=main.cpp
+OBJS=main.o
+
+prefix=@prefix@
+BIN_DIR=@exec_prefix@/bin
+MAN_DIR=@mandir@
+BFCD_LIB_DIR=@datadir@/bfcd3/lib
+BFCD_SHARE_DIR=@datarootdir@/bfcd7
+
+CADDFLAGS=@CFLAGS@
+CCFLAGS=-O2 -I../libbfcd -I/usr/local/include $(CFLAGS) -DDATA_DIR=\"$(BFCD_LIB_DIR)/\" \
+	-DBASE_COMPILER=\"$(BFCD_LIB_DIR)/$(NAME)\" -DINTELCC -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS)
+
+CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \
+	-funroll-loops -fno-rtti
+
+%.o: %.c
+	$(CC) $(CCOPT) $(CCFLAGS) -c $<
+
+%.o: %.cpp
+	$(CPP) $(CCOPT) $(CCFLAGS) -c $<
+
+%.o: %.S
+	$(CC) $(CCFLAGS) -c $<
+
+all: depend $(NAME)
+
+install:
+	../mkinstalldirs $(BFCD_LIB_DIR)
+	$(INSTALL) -m 755 $(NAME) $(BFCD_LIB_DIR)
+
+clean:
+	rm -f $(OBJS)
+	rm -f $(NAME)
+	rm -f gensys
+	echo >.depend
+
+gensys: gensys.c
+	$(CC) $(CCFLAGS) -o gensys gensys.c
+	./gensys
+
+$(NAME): $(OBJS)
+	$(CC) $(CCFLAGS) -o $(NAME) $(OBJS) $(LIBS)
+
+dep: depend
+
+depend: .depend
+	makedepend $(CCFLAGS) $(SRC) >/dev/null 2>&1
+
+.depend:
+	touch .depend
+
+######################################################################
+include .depend
+# DO NOT DELETE
