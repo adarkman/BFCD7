@@ -4546,6 +4546,11 @@ void create_c() {
 #else
   GDFLT("MAP_FILE", 0);
 #endif
+#ifdef MAP_ANONYMOUS
+  GCST("MAP_ANONYMOUS", MAP_ANONYMOUS);
+#else
+  GDFLT("MAP_ANONYMOUS", 0);
+#endif
 #ifdef MAP_FIXED
   GCST("MAP_FIXED", MAP_FIXED);
 #else

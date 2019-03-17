@@ -28,6 +28,8 @@ DEPS = @DEPS@
 ADDRINFO_OBJECTS = @ADDRINFO_OBJECTS@
 SIGNALS_GENERATED = @SIGNALS_GENERATED@
 
+GNATMAKE=gnatmake-7.3.1
+
 DOCS = \
  COPYING\
  README\
@@ -348,16 +350,16 @@ $(ADDRINFO_OBJECTS): pconfig.h
 # "deps5c.adb" is the same, but with POSIX.5c packages added.
 #
 deps: Makefile $(ALL_SOURCES) florist
-	gnatmake  -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
+	$(GNATMAKE)  -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
 deps_no_thread: Makefile $(ALL_SOURCES) florist
-	gnatmake  -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
+	$(GNATMAKE)  -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
 deps5c: Makefile $(ALL_SOURCES) florist
-	gnatmake  -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
+	$(GNATMAKE)  -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
 #
 # If we have modified the Ada runtime system, we need to recompile that also.
 #
 build: Makefile build.adb $(ALL_SOURCES) florist
-	gnatmake -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
+	$(GNATMAKE) -c $(GNATMAKEFLAGS1B) $@ $(GNATMAKEFLAGS2B)
 #
 # -----------------------------------
 # Create a florist library for objects

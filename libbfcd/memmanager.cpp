@@ -92,6 +92,7 @@ bool MemManager::createDataFile(size_t _vm_data_size)
     if(data_fd == -1) return false;
     unlink(ft);
     //lseek(data_fd, 0, SEEK_SET);
+	//Проверить работу без создания файла (см. man mmap: MAP_ANONYMOUS)
     base = mmap ((void*)HERE_ADDR, _vm_data_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, data_fd, 0);
     if(base == MAP_FAILED)
     {

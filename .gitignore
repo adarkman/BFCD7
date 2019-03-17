@@ -21,4 +21,24 @@ libbfcd/config.h
 ada-libs/florist_3.5.0_20040403.src/config.h
 ada-libs/florist_3.5.0_20040403.src/pconfig.h
 ada-libs/florist_3.5.0_20040403.src/stamp-h
+ada-libs/florist_3.5.0_20040403.src/c-posix
+ada-libs/florist_3.5.0_20040403.src/c-posix-signals
+ada-libs/florist_3.5.0_20040403.src/florist
+ada-libs/florist_3.5.0_20040403.src/floristlib/
+ada-libs/florist_3.5.0_20040403.src/gnatprep.config
+ada-libs/florist_3.5.0_20040403.src/posix-c.ads
+ada-libs/florist_3.5.0_20040403.src/posix-implementation-ok_signals.ads
+ada-libs/florist_3.5.0_20040403.src/posix-implementation.adb
+ada-libs/florist_3.5.0_20040403.src/posix-implementation.ads
+ada-libs/florist_3.5.0_20040403.src/posix-limits.ads
+ada-libs/florist_3.5.0_20040403.src/posix-options.ads
+ada-libs/florist_3.5.0_20040403.src/posix-process_identification.adb
+ada-libs/florist_3.5.0_20040403.src/posix-process_primitives.adb
+ada-libs/florist_3.5.0_20040403.src/posix-sockets-internet.adb
+ada-libs/florist_3.5.0_20040403.src/posix-sockets.adb
+ada-libs/florist_3.5.0_20040403.src/posix-sockets.ads
+ada-libs/florist_3.5.0_20040403.src/posix-unsafe_process_primitives.adb
+ada-libs/florist_3.5.0_20040403.src/posix-xti.adb
+ada-libs/florist_3.5.0_20040403.src/posix.ads
+src/bfcd7
 
