@@ -16,6 +16,18 @@ case "$target" in
 esac
 AC_SUBST(gnumake)
 
+dnl GNAT GPL
+AC_ARG_VAR(GNATMAKE,[gnatmake from GNAT GPL command])
+if test "${GNATMAKE+set}" != set ; then
+	AC_CHECK_PROG(gnatmake,gnatmake,gnatmake,no)
+else
+	AC_CHECK_PROG(gnatmake,[$GNATMAKE],[$GNATMAKE],no)
+fi
+if test "x$gnatmake" = "xno" ; then
+	AC_MSG_ERROR(you must have 'gnatmake' installed for compile BFCD7 or set environment variable GNATMAKE);
+fi
+AC_SUBST(gnatmake)
+
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP

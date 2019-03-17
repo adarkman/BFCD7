@@ -14,6 +14,7 @@ CPP=@CXX@
 LIBS=@LIBS@ -lm -lstdc++
 INSTALL=@INSTALL@
 LN=@LN_S@
+GNATMAKE=@gnatmake@
 
 CTAGS=ctags
 

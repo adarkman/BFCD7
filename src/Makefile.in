@@ -13,6 +13,7 @@ CC=@CC@
 CPP=@CXX@
 LIBS=@LIBS@ -L../libbfcd -lbfcd -lm -lstdc++
 INSTALL=@INSTALL@
+GNATMAKE=@gnatmake@
 
 ARCH=@target@
 
