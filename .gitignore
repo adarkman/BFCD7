@@ -10,11 +10,15 @@ Makefile
 /configure
 /configure.scan
 /autom4te.cache
-/config.status
+config.status
 tags
 *.bak
 libbfcd/config.h
 .depend
 /src/bfcd7-db
 /src/bfcd7-rb
+*.ali
+ada-libs/florist_3.5.0_20040403.src/config.h
+ada-libs/florist_3.5.0_20040403.src/pconfig.h
+ada-libs/florist_3.5.0_20040403.src/stamp-h
 
