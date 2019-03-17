@@ -1,3 +1,4 @@
+pragma Source_Reference (1, "posix-unsafe_process_primitives.gpb");
 ------------------------------------------------------------------------------
 --                                                                          --
 --            FLORIST (FSU Implementation of POSIX.5) COMPONENTS            --
@@ -100,9 +101,9 @@ package body POSIX.Unsafe_Process_Primitives is
       Result := fork;
       if Result = -1 then Raise_POSIX_Error; end if;
       if Result = 0 then
-#        if HAVE_Leroy_Threads then
-         This_Process := getpid;
-#        end if;
+--! #        if HAVE_Leroy_Threads then
+--!          This_Process := getpid;
+--! #        end if;
          --  reset soft links to non-tasking versions of operations
          SSL.Abort_Defer        := SSL.Abort_Defer_NT'Access;
          SSL.Abort_Undefer      := SSL.Abort_Undefer_NT'Access;

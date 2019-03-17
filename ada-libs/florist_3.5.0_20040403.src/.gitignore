@@ -1,0 +1,7 @@
+*.ali
+*.o
+stamp-h
+config.h
+config.status
+pconfig.h
+
