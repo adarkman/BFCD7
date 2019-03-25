@@ -11,9 +11,9 @@ package body LibBFCD.MemManager is
 	begin
 		Pool.Page_Size := LibBFCD.C.sysconf(LibBFCD.C.__SC_PAGE_SIZE);
 		Pool.Real_Size := (((Pool.Code_Size + Pool.DataSize)/Pool.Page_Size+1)*Pool.Page_Size;
-		Pool.Base := C.mmap(Heap_Base, Pool.Real_Size, 
-			Mem.PROT_READ or Mem.PROT_WITE,
-			Mem.MAP_ANONYMOUS or Mem.MAP_FIXED, -1, 0);
+		Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
+			Mem.Allow_Read or Mem.Allow_Write,
+			Mem.Map_Shared, Exact_Address);
 		if Pool.Base = Mem.Failure then raise Memory_Mapping_Error; end if;
 	end Init;
 

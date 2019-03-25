@@ -97,8 +97,7 @@ package body POSIX.Memory_Mapping is
       Length     : System.Storage_Elements.Storage_Offset;
       Protection : Protection_Options;
       Mapping    : Mapping_Options;
-      Location   : Location_Options;
-      Offset     : POSIX.IO_Count)
+      Location   : Location_Options)
       return System.Address is
       Result : System.Address;
    begin
@@ -109,7 +108,7 @@ package body POSIX.Memory_Mapping is
         int (Option_Set (Mapping).Option or Option_Set (Location).Option
            or MAP_ANONYMOUS),
         int (-1),
-        off_t (Offset));
+        off_t (0));
       if Result = Failure then Raise_POSIX_Error; end if;
       return Result;
    end Map_Memory_Anonymous;
