@@ -112,7 +112,7 @@ package body POSIX.Memory_Mapping is
         off_t (Offset));
       if Result = Failure then Raise_POSIX_Error; end if;
       return Result;
-   end Map_Memory;
+   end Map_Memory_Anonymous;
 
    ------------------
    --  Map_Memory  --

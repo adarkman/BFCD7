@@ -68,7 +68,7 @@ package POSIX.Memory_Mapping is
       Offset     : POSIX.IO_Count)
       return System.Address;
 
-   function Map_Memory
+   function Map_Memory_Anonymous
      (First      : System.Address;
       Length     : System.Storage_Elements.Storage_Offset;
       Protection : Protection_Options;
