@@ -69,6 +69,15 @@ package POSIX.Memory_Mapping is
       return System.Address;
 
    function Map_Memory
+     (First      : System.Address;
+      Length     : System.Storage_Elements.Storage_Offset;
+      Protection : Protection_Options;
+      Mapping    : Mapping_Options;
+      Location   : Location_Options;
+      Offset     : POSIX.IO_Count)
+      return System.Address;
+
+   function Map_Memory
      (Length     : System.Storage_Elements.Storage_Offset;
       Protection : Protection_Options;
       Mapping    : Mapping_Options;

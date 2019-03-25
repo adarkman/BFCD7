@@ -92,6 +92,28 @@ package body POSIX.Memory_Mapping is
       return Result;
    end Map_Memory;
 
+   function Map_Memory_Anonymous
+     (First      : System.Address;
+      Length     : System.Storage_Elements.Storage_Offset;
+      Protection : Protection_Options;
+      Mapping    : Mapping_Options;
+      Location   : Location_Options;
+      Offset     : POSIX.IO_Count)
+      return System.Address is
+      Result : System.Address;
+   begin
+      Result := mmap
+       (First,
+        size_t (Length),
+        int (Option_Set (Protection).Option),
+        int (Option_Set (Mapping).Option or Option_Set (Location).Option
+           or MAP_ANONYMOUS),
+        int (-1),
+        off_t (Offset));
+      if Result = Failure then Raise_POSIX_Error; end if;
+      return Result;
+   end Map_Memory;
+
    ------------------
    --  Map_Memory  --
    ------------------
