@@ -7,7 +7,11 @@ with System.Storage_Pools;			use System.Storage_Pools;
 
 package LibBFCD.MemManager is
 
-	type Heap (Size : Storage_Count) is new Root_Storage_Pool with private;
+	type Heap (Code_Size : Storage_Count, Data_Size : Storage_Count) is new Root_Storage_Pool with private;
+
+	Memory_Mapping_Error : exception;
+
+	procedure Init (Pool : in out Heap);
 
 	overriding
 	procedure Allocate (
@@ -28,8 +32,14 @@ package LibBFCD.MemManager is
 
 private
 
-	type Heap (Size : Storage_Count) is new Root_Storage_Pool with record
+	type Heap (Code_Size : Storage_Count, Data_Size : Storage_Count) is new Root_Storage_Pool with record
+		Size : Storage_Count;
+		Base : System.Address;
+		Page_Size : Storage_Count;
+		Real_Size : Storage_Count;
 	end Heap;
+
+	Heap_Base : constant System.Address := 16#90000000#;
 
 end LibBFCD.MemManager;
 
