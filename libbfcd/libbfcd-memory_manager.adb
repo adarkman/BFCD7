@@ -26,8 +26,7 @@ package body LibBFCD.Memory_Manager is
 
 	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word is
 		type Byte_Array is array (1..Pool.Code_Size) of Byte;
-		Bytes : Byte_Array;
-		for Bytes'Address use Pool.Code;
+		Bytes : Byte_Array with Address => Pool.Code;
 		type Code_Word_Array is array (1..Pool.Code_Word_Array_Size) of Code_Word;
 		function Bytes_To_Code_Word_Array is
 			new Ada.Unchecked_Conversion (Source => Byte_Array, Target => Code_Word_Array);
