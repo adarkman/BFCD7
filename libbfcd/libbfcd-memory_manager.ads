@@ -4,8 +4,9 @@
 
 with System.Storage_Elements;		use System.Storage_Elements;
 with System.Storage_Pools;			use System.Storage_Pools;
+with LibBFCD.Code_Types;			use LibBFCD.Code_Types;
 
-package LibBFCD.MemManager is
+package LibBFCD.Memory_Manager is
 
 	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with private;
 
@@ -31,15 +32,19 @@ package LibBFCD.MemManager is
 	function Storage_Size (Pool : in Heap) return Storage_Count;
 
 private
+	
+	type Code_Pool is array (Positive range <>) of Code_Word;
+	type Code_Pool_Ptr is access all Code_Pool;
 
 	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with record
 		Size : Storage_Count;
 		Base : System.Address;
 		Page_Size : Storage_Count;
 		Real_Size : Storage_Count;
+		Code : Code_Pool_Ptr;
 	end record;
 
-	Heap_Base : constant System.Address := To_Address(16#90000000#);
+	Heap_Base : constant System.Address := To_Address(16#90_000_000#);
 
-end LibBFCD.MemManager;
+end LibBFCD.Memory_Manager;
 
