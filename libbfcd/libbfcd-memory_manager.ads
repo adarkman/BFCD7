@@ -11,6 +11,7 @@ package LibBFCD.Memory_Manager is
 	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with private;
 
 	Memory_Mapping_Error : exception;
+	Code_Range_Error : exception;
 
 	procedure Init (Pool : in out Heap);
 
@@ -31,17 +32,20 @@ package LibBFCD.Memory_Manager is
 	overriding
 	function Storage_Size (Pool : in Heap) return Storage_Count;
 
+	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word;
+
 private
 	
-	type Code_Pool is array (Positive range <>) of Code_Word;
-	type Code_Pool_Ptr is access all Code_Pool;
+	type Byte is mod 256;
 
 	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with record
 		Size : Storage_Count;
 		Base : System.Address;
 		Page_Size : Storage_Count;
 		Real_Size : Storage_Count;
-		Code : Code_Pool_Ptr;
+		Code : System.Address;
+		Code_Top : Positive;
+		Code_Word_Array_Size : Positive;
 	end record;
 
 	Heap_Base : constant System.Address := To_Address(16#90_000_000#);
