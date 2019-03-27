@@ -13,7 +13,20 @@ package LibBFCD.Code_Types is
 	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code, Type_Vocabulary);
 
 	type Code_Word;
-	type Vocabulary;
+	
+	type Vocabulary_Element is record
+		word : access Code_Word;
+		next : access Vocabulary_Element;
+	end record;
+	type Element_Ptr is access Vocabulary_Element;
+	--for Element_Ptr'Storage_Pool use LibBFCD.Global_Data.Pool;
+
+	type Vocabulary is record
+		Name : access Wide_String;
+		first : Element_Ptr;
+	end record;
+	type Vocabulary_Ptr is access Vocabulary;
+
 	type Forth_Data_Word(Data_Type : Forth_Data_Type := Type_Double) is record
 		case Data_Type is
 			when Type_Integer =>

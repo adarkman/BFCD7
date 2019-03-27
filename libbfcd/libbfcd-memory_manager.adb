@@ -4,6 +4,7 @@ with POSIX.Configurable_System_Limits;
 with Ada.Unchecked_Conversion;
 with System.Address_To_Access_Conversions;
 with Interfaces.C;
+with Ada.Text_IO; use Ada.Text_IO;
 
 package body LibBFCD.Memory_Manager is
 
@@ -13,7 +14,7 @@ package body LibBFCD.Memory_Manager is
 	package C renames Interfaces.C;
 	use type System.Address;
 
-	procedure Init (Pool : in out Heap) is
+	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count) is
 		use type Mem.Protection_Options;
 	begin
 		Pool.Code_Word_Size := (if (Code_Word'Size rem 8) = 0 
@@ -21,8 +22,8 @@ package body LibBFCD.Memory_Manager is
 											else (Code_Word'Size/8+1));
 		Pool.Page_Size := Storage_Count(CSL.Page_Size);
 		-- ensure page aligned
-		Pool.Real_Code_Size := (Pool.Code_Size/Pool.Page_Size+1)*Pool.Page_Size;
-		Pool.Real_Data_Size := (Pool.Data_Size/Pool.Page_Size+1)*Pool.Page_Size;
+		Pool.Real_Code_Size := (Code_Size/Pool.Page_Size+1)*Pool.Page_Size;
+		Pool.Real_Data_Size := (Data_Size/Pool.Page_Size+1)*Pool.Page_Size;
 		--
 		Pool.Real_Size := Pool.Real_Code_Size + Pool.Real_Data_Size;
 		Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
@@ -30,17 +31,19 @@ package body LibBFCD.Memory_Manager is
 			Mem.Map_Shared, Mem.Exact_Address);
 		--
 		Pool.Code := Pool.Base; --  Code started at mmaped area start
+		Put_Line("Heap init: " & Integer_Address'Image(To_Integer(Pool.Base)));
 		Pool.Code_Top := 1;
 		Pool.Code_Word_Array_Size := Positive(Pool.Real_Code_Size)/Pool.Code_Word_Size-1; -- (-1) - ensure we are have pad
 		--
 		Pool.Data := Pool.Code+Storage_Offset(Pool.Real_Code_Size);
+		Put_Line("Heap data: " & Integer_Address'Image(To_Integer(Pool.Data)));
 		Pool.Data_MSpace := create_mspace_with_base (Pool.Data, size_t(Pool.Real_Data_Size), 1);
 		if Pool.Data_MSpace = mspace(To_Address(0)) then raise Memory_Mapping_Error; end if;
 		-- MSPACE tuning
 		declare 
 			track : C.int; 
 			limit : size_t; 
-		begin
+		begin null;
 			-- disable separated allocation of large chunks
 			track := mspace_track_large_chunks (Pool.Data_MSpace, 1); 
 			-- disable additional system memory chunks allocation
@@ -82,6 +85,8 @@ package body LibBFCD.Memory_Manager is
 		Alignment : in Storage_Count) is
 	begin
 		Address := mspace_malloc (Pool.Data_MSpace, size_t(Size));
+		Put("Alloc: " & Integer_Address'Image(To_Integer(Address)));
+		Put_Line(" " & Storage_Count'Image(Size));
 		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;
 	end Allocate;
 

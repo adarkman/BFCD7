@@ -9,13 +9,13 @@ with malloc_2_8_6_h;				use malloc_2_8_6_h; 		-- Doug Lea malloc interface
 
 package LibBFCD.Memory_Manager is
 
-	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with private;
+	type Heap is new Root_Storage_Pool with private;
 
 	Memory_Mapping_Error : exception;
 	Memory_Allocation_Error : exception;
 	Code_Range_Error : exception;
 
-	procedure Init (Pool : in out Heap);
+	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count);
 
 	overriding
 	procedure Allocate (
@@ -42,7 +42,7 @@ private
 	type Byte is mod 256;
 	NULL_ADDR : constant System.Address := To_Address(0);
 
-	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with record
+	type Heap is new Root_Storage_Pool with record
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
 		Size : Storage_Count;				-- Code_Size+Data_Size
 		Base : System.Address;				-- Heap_Base
