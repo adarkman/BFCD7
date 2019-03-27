@@ -3,15 +3,17 @@
 -- Author: Alexandr Darkman
 
 with System.Address_To_Access_Conversions;
+with Ada.Containers;
 
 package LibBFCD.Code_Types is
 
 	-- Forth Word type
 	type Forth_Word_Ptr is access procedure;
 
-	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code);
+	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code, Type_Vocabulary);
 
 	type Code_Word;
+	type Vocabulary;
 	type Forth_Data_Word(Data_Type : Forth_Data_Type := Type_Double) is record
 		case Data_Type is
 			when Type_Integer =>
@@ -22,6 +24,8 @@ package LibBFCD.Code_Types is
 				float : Long_Float;
 			when Type_Code =>
 				code : access Code_Word;
+			when Type_Vocabulary =>
+				voc : access Vocabulary;
 		end case;
 	end record;
 
@@ -34,6 +38,7 @@ package LibBFCD.Code_Types is
 	type Code_Word (Data_Type : Word_Type := Data_Word) is record
 		Index : Natural := 0;
 		Name : access Wide_String;
+		Name_Hash : Ada.Containers.Hash_Type;
 		Help : access Wide_String;
 		Flags : Code_Word_Flags;
 		case Data_Type is
