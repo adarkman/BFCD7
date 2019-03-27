@@ -17,13 +17,21 @@ package body LibBFCD.Memory_Manager is
 											then (Code_Word'Size/8)
 											else (Code_Word'Size/8+1));
 		Pool.Page_Size := Storage_Count(CSL.Page_Size);
-		Pool.Real_Size := ((Pool.Code_Size + Pool.Data_Size)/Pool.Page_Size+1)*Pool.Page_Size;
+		-- ensure page aligned
+		Pool.Real_Code_Size := (Pool.Code_Size/Pool.Page_Size+1)*Pool.Page_Size;
+		Pool.Real_Data_Size := (Pool.Data_Size/Pool.Page_Size+1)*Pool.Page_Size;
+		--
+		Pool.Real_Size := Pool.Real_Code_Size + Pool.Real_Data_Size;
 		Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
 			Mem.Allow_Read + Mem.Allow_Write,
 			Mem.Map_Shared, Mem.Exact_Address);
+		--
 		Pool.Code := Pool.Base; --  Code started at mmaped area start
 		Pool.Code_Top := 1;
-		Pool.Code_Word_Array_Size := Positive(Pool.Code_Size)/Pool.Code_Word_Size;
+		Pool.Code_Word_Array_Size := Positive(Pool.Real_Code_Size)/Pool.Code_Word_Size-1; -- (-1) - ensure we are have pad
+		--
+		Pool.Data := Pool.Code+Storage_Offset(Pool.Real_Code_Size);
+		Pool.Data_MSpace := create_mspace_with_base (Pool.Data, size_t(Pool.Real_Data_Size), 1);
 	end Init;
 
 	-- Unsafe version - do not check index range, use only if you know what you do
