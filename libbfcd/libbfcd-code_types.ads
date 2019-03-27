@@ -26,12 +26,16 @@ package LibBFCD.Code_Types is
 	end record;
 
 	type Word_Type is (Binary_Word, Data_Word, Forth_Word);
+	type Code_Word_Flags is (None, Immediate);
+		for Code_Word_Flags use (None => 0, Immediate => 1);
 
 	-- Code_Word must have default discriminant value for 
 	-- array of Code_Word can be declared
 	type Code_Word (Data_Type : Word_Type := Data_Word) is record
 		Index : Natural := 0;
 		Name : access Wide_String;
+		Help : access Wide_String;
+		Flags : Code_Word_Flags;
 		case Data_Type is
 			when Binary_Word =>
 				operator : Forth_Word_Ptr;
