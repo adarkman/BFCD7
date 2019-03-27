@@ -11,6 +11,7 @@ package body LibBFCD.Memory_Manager is
 	package CSL renames POSIX.Configurable_System_Limits;
 	package Code_Word_Access is new System.Address_To_Access_Conversions (Object => Code_Word);
 	package C renames Interfaces.C;
+	use type System.Address;
 
 	procedure Init (Pool : in out Heap) is
 		use type Mem.Protection_Options;
@@ -50,7 +51,6 @@ package body LibBFCD.Memory_Manager is
 
 	-- Unsafe version - do not check index range, use only if you know what you do
 	function Get_Code_Word_Unsafe(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr is
-		use type System.Address;
 	begin
 		return Code_Word_Ptr(Code_Word_Access.To_Pointer (Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1))));
 	end Get_Code_Word_Unsafe;
@@ -81,7 +81,8 @@ package body LibBFCD.Memory_Manager is
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
 	begin
-		null;
+		Address := mspace_malloc (Pool.Data_MSpace, size_t(Size));
+		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;
 	end Allocate;
 
 	overriding
@@ -91,7 +92,7 @@ package body LibBFCD.Memory_Manager is
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
 	begin
-		null;
+		mspace_free (Pool.Data_MSpace, Address);
 	end Deallocate;
 
 end LibBFCD.Memory_Manager;

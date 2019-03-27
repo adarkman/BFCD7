@@ -12,6 +12,7 @@ package LibBFCD.Memory_Manager is
 	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with private;
 
 	Memory_Mapping_Error : exception;
+	Memory_Allocation_Error : exception;
 	Code_Range_Error : exception;
 
 	procedure Init (Pool : in out Heap);
@@ -39,6 +40,7 @@ package LibBFCD.Memory_Manager is
 private
 	
 	type Byte is mod 256;
+	NULL_ADDR : constant System.Address := To_Address(0);
 
 	type Heap (Code_Size, Data_Size : Storage_Count) is new Root_Storage_Pool with record
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
