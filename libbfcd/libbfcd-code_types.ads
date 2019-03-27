@@ -3,12 +3,27 @@
 -- Author: Alexandr Darkman
 
 with System.Address_To_Access_Conversions;
---with Ada.Wide_Strings;	use Ada.Wide_Strings;
 
 package LibBFCD.Code_Types is
 
 	-- Forth Word type
 	type Forth_Word_Ptr is access procedure;
+
+	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code);
+
+	type Code_Word;
+	type Forth_Data_Word(Data_Type : Forth_Data_Type := Type_Double) is record
+		case Data_Type is
+			when Type_Integer =>
+				int : Integer;
+			when Type_String =>
+				str : access Wide_String;
+			when Type_Double =>
+				float : Long_Float;
+			when Type_Code =>
+				code : access Code_Word;
+		end case;
+	end record;
 
 	type Word_Type is (Binary_Word, Data_Word, Forth_Word);
 
@@ -21,9 +36,9 @@ package LibBFCD.Code_Types is
 			when Binary_Word =>
 				operator : Forth_Word_Ptr;
 			when Data_Word =>
-				data : access all Code_Word;
+				data : access Forth_Data_Word;
 			when Forth_Word =>
-				code : Positive;
+				code : access all Code_Word;
 		end case;
 	end record;
 
