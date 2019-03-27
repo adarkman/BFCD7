@@ -2,18 +2,20 @@ with POSIX;	use POSIX;
 with POSIX.Memory_Mapping;
 with POSIX.Configurable_System_Limits;
 with Ada.Unchecked_Conversion;
+with System.Address_To_Access_Conversions;
 
 package body LibBFCD.Memory_Manager is
 
 	package Mem renames POSIX.Memory_Mapping;
 	package CSL renames POSIX.Configurable_System_Limits;
+	package Code_Word_Access is new System.Address_To_Access_Conversions (Object => Code_Word);
 
 	procedure Init (Pool : in out Heap) is
 		use type Mem.Protection_Options;
-		Code_Word_Size : Positive := (if (Code_Word'Size rem 8) = 0 
-										then (Code_Word'Size/8)
-										else (Code_Word'Size/8+1));
 	begin
+		Pool.Code_Word_Size := (if (Code_Word'Size rem 8) = 0 
+											then (Code_Word'Size/8)
+											else (Code_Word'Size/8+1));
 		Pool.Page_Size := Storage_Count(CSL.Page_Size);
 		Pool.Real_Size := ((Pool.Code_Size + Pool.Data_Size)/Pool.Page_Size+1)*Pool.Page_Size;
 		Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
@@ -21,18 +23,14 @@ package body LibBFCD.Memory_Manager is
 			Mem.Map_Shared, Mem.Exact_Address);
 		Pool.Code := Pool.Base; --  Code started at mmaped area start
 		Pool.Code_Top := 1;
-		Pool.Code_Word_Array_Size := Positive(Pool.Code_Size)/Code_Word_Size;
+		Pool.Code_Word_Array_Size := Positive(Pool.Code_Size)/Pool.Code_Word_Size;
 	end Init;
 
-	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word is
-		type Byte_Array is array (1..Pool.Code_Size) of Byte;
-		Bytes : Byte_Array with Address => Pool.Code;
-		type Code_Word_Array is array (1..Pool.Code_Word_Array_Size) of Code_Word;
-		function Bytes_To_Code_Word_Array is
-			new Ada.Unchecked_Conversion (Source => Byte_Array, Target => Code_Word_Array);
+	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr is
+		use type System.Address;
 	begin
 		if Index > Pool.Code_Top then raise Code_Range_Error; end if;
-		return Bytes_To_Code_Word_Array(Bytes)(Index);
+		return Code_Word_Ptr(Code_Word_Access.To_Pointer (Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1))));
 	end Get_Code_Word;
 
 	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.Real_Size);

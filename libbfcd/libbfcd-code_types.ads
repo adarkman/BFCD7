@@ -2,6 +2,8 @@
 -- (C) Hell Design 2019
 -- Author: Alexandr Darkman
 
+with System.Address_To_Access_Conversions;
+
 package LibBFCD.Code_Types is
 
 	type Word_Type is (Binary_Word, Data_Word, Forth_Word);
@@ -18,6 +20,9 @@ package LibBFCD.Code_Types is
 				code : Integer;
 		end case;
 	end record;
-	type Code_Word_Ptr is access all Code_Word;
+	--type Code_Word_Ptr is access all Code_Word;
+
+	package Code_Word_Access is new System.Address_To_Access_Conversions (Object => Code_Word);
+	subtype Code_Word_Ptr is Code_Word_Access.Object_Pointer;
 
 end LibBFCD.Code_Types;

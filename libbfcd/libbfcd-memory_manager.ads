@@ -32,7 +32,7 @@ package LibBFCD.Memory_Manager is
 	overriding
 	function Storage_Size (Pool : in Heap) return Storage_Count;
 
-	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word;
+	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr;
 
 private
 	
@@ -44,6 +44,7 @@ private
 		Page_Size : Storage_Count;
 		Real_Size : Storage_Count;
 		Code : System.Address;
+		Code_Word_Size : Positive;
 		Code_Top : Positive;
 		Code_Word_Array_Size : Positive;
 	end record;

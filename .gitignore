@@ -3,6 +3,7 @@
 *.so
 *.so.*
 *.swp
+.*.sw?
 *~
 /.kdev4
 Makefile
