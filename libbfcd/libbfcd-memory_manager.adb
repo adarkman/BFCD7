@@ -3,12 +3,14 @@ with POSIX.Memory_Mapping;
 with POSIX.Configurable_System_Limits;
 with Ada.Unchecked_Conversion;
 with System.Address_To_Access_Conversions;
+with Interfaces.C;
 
 package body LibBFCD.Memory_Manager is
 
 	package Mem renames POSIX.Memory_Mapping;
 	package CSL renames POSIX.Configurable_System_Limits;
 	package Code_Word_Access is new System.Address_To_Access_Conversions (Object => Code_Word);
+	package C renames Interfaces.C;
 
 	procedure Init (Pool : in out Heap) is
 		use type Mem.Protection_Options;
@@ -32,6 +34,18 @@ package body LibBFCD.Memory_Manager is
 		--
 		Pool.Data := Pool.Code+Storage_Offset(Pool.Real_Code_Size);
 		Pool.Data_MSpace := create_mspace_with_base (Pool.Data, size_t(Pool.Real_Data_Size), 1);
+		if Pool.Data_MSpace = mspace(To_Address(0)) then raise Memory_Mapping_Error; end if;
+		-- MSPACE tuning
+		declare 
+			track : C.int; 
+			limit : size_t; 
+		begin
+			-- disable separated allocation of large chunks
+			track := mspace_track_large_chunks (Pool.Data_MSpace, 1); 
+			-- disable additional system memory chunks allocation
+			limit := mspace_set_footprint_limit (Pool.Data_MSpace, 0);  
+		end;
+		--
 	end Init;
 
 	-- Unsafe version - do not check index range, use only if you know what you do
