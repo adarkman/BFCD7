@@ -11,6 +11,7 @@ package LibBFCD.Code_Types is
 	-- Code_Word must have default discriminant value for 
 	-- array of Code_Word can be declared
 	type Code_Word (Data_Type : Word_Type := Data_Word) is record
+		index : Natural := 0;
 		case Data_Type is
 			when Binary_Word =>
 				operator : Integer;

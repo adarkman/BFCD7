@@ -32,7 +32,8 @@ package LibBFCD.Memory_Manager is
 	overriding
 	function Storage_Size (Pool : in Heap) return Storage_Count;
 
-	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr;
+	function Get_Code_Word(Pool : in out Heap; Index : in Positive) return Code_Word_Ptr;
+	function Allocate_Code_Word(Pool : in out Heap; Data_Type : in Word_Type) return Code_Word_Ptr;
 
 private
 	
@@ -50,6 +51,8 @@ private
 	end record;
 
 	Heap_Base : constant System.Address := To_Address(16#90_000_000#);
+
+	function Get_Code_Word_Unsafe(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr;
 
 end LibBFCD.Memory_Manager;
 

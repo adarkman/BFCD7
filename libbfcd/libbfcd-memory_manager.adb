@@ -26,12 +26,30 @@ package body LibBFCD.Memory_Manager is
 		Pool.Code_Word_Array_Size := Positive(Pool.Code_Size)/Pool.Code_Word_Size;
 	end Init;
 
-	function Get_Code_Word(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr is
+	-- Unsafe version - do not check index range, use only if you know what you do
+	function Get_Code_Word_Unsafe(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr is
+		use type System.Address;
+	begin
+		return Code_Word_Ptr(Code_Word_Access.To_Pointer (Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1))));
+	end Get_Code_Word_Unsafe;
+
+	function Get_Code_Word(Pool : in out Heap; Index : in Positive) return Code_Word_Ptr is
 		use type System.Address;
 	begin
 		if Index > Pool.Code_Top then raise Code_Range_Error; end if;
-		return Code_Word_Ptr(Code_Word_Access.To_Pointer (Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1))));
+		return Get_Code_Word_Unsafe(Pool, Index);
 	end Get_Code_Word;
+
+	function Allocate_Code_Word(Pool : in out Heap; Data_Type : in Word_Type) return Code_Word_Ptr is
+		ptr : Code_Word_Ptr;
+		word : Code_Word(Data_Type);
+	begin
+		Pool.Code_Top := Pool.Code_Top+1;
+		ptr := Get_Code_Word_Unsafe (Pool, Pool.Code_Top);
+		word.index := Pool.Code_Top;
+		ptr.all := word; -- ensure memory initialized
+		return ptr;
+	end Allocate_Code_Word;
 
 	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.Real_Size);
 
