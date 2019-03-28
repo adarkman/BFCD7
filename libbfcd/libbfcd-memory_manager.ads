@@ -20,7 +20,7 @@ package LibBFCD.Memory_Manager is
 
 	-- Внимание ! 
 	-- Если не хотим странных косяков, то Pool используется только как instance 
-	-- т.е. 'Pool : Heap', никаких 'access' и прочих '...Ptr' - иначе 
+	-- т.е. 'Pool : aliased Heap', никаких 'access' и прочих '...Ptr' - иначе 
 	-- Ада нормально не работает с динамически создаваемыми пулами.
 	-- Это как-то связано с областью видимости, - надо копать RM'12.
 	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive; Flags : Heap_Type := Heap_Fixed);
