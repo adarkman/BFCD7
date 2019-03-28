@@ -46,6 +46,7 @@ package body LibBFCD.Memory_Manager is
 			limit := mspace_set_footprint_limit (Pool.Data_MSpace, 0);  
 		end;
 		--
+		Pool.Allocated := Memory_Map.Empty_Map;
 	end Init;
 
 	-- Unsafe version - do not check index range, use only if you know what you do
@@ -80,6 +81,7 @@ package body LibBFCD.Memory_Manager is
 		Put("Alloc: " & Integer_Address'Image(To_Integer(Address)));
 		Put_Line(" " & Storage_Count'Image(Size));
 		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;
+		Memory_Map.Insert(Pool.Allocated, Address, False);
 	end Allocate;
 
 	overriding
@@ -90,6 +92,7 @@ package body LibBFCD.Memory_Manager is
 		Alignment : in Storage_Count) is
 	begin
 		mspace_free (Pool.Data_MSpace, Address);
+		Memory_Map.Delete(Pool.Allocated, Address);
 	end Deallocate;
 
 end LibBFCD.Memory_Manager;

@@ -5,6 +5,7 @@
 with System.Storage_Elements;		use System.Storage_Elements;
 with System.Storage_Pools;			use System.Storage_Pools;
 with malloc_2_8_6_h;				use malloc_2_8_6_h; 		-- Doug Lea malloc interface
+with Ada.Containers.Ordered_Maps;
 
 package LibBFCD.Memory_Manager is
 
@@ -41,7 +42,18 @@ private
 	
 	type Byte is mod 256;
 	NULL_ADDR : constant System.Address := To_Address(0);
+	
+	--
+	-- Allocated memory map
+	--
+	use type System.Address;
+	package Memory_Map is new Ada.Containers.Ordered_Maps (
+		Key_Type => System.Address,
+		Element_Type => Boolean);
 
+	--
+	-- Main Forth storage pool
+	--
 	type Heap is new Root_Storage_Pool with record
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
 		Size : Storage_Count;				-- Code_Size+Data_Size
@@ -56,6 +68,8 @@ private
 		--
 		Data : System.Address;				-- Data pool base address
 		Data_MSpace : mspace;				-- Data MSpace for Doug Lea malloc
+		--
+		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
 	end record;
 
 	Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
