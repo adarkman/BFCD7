@@ -4,7 +4,6 @@
 
 with System.Storage_Elements;		use System.Storage_Elements;
 with System.Storage_Pools;			use System.Storage_Pools;
-with LibBFCD.Code_Types;			use LibBFCD.Code_Types;
 with malloc_2_8_6_h;				use malloc_2_8_6_h; 		-- Doug Lea malloc interface
 
 package LibBFCD.Memory_Manager is
@@ -15,7 +14,7 @@ package LibBFCD.Memory_Manager is
 	Memory_Allocation_Error : exception;
 	Code_Range_Error : exception;
 
-	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count);
+	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
 
 	overriding
 	procedure Allocate (
@@ -34,8 +33,9 @@ package LibBFCD.Memory_Manager is
 	overriding
 	function Storage_Size (Pool : in Heap) return Storage_Count;
 
-	function Get_Code_Word(Pool : in out Heap; Index : in Positive) return Code_Word_Ptr;
-	function Allocate_Code_Word(Pool : in out Heap; Data_Type : in Word_Type) return Code_Word_Ptr;
+	function Get_Code_Word_Address(Pool : in out Heap; Index : in Positive) return System.Address;
+	function Allocate_Code_Word_Address(Pool : in out Heap; Index : out Positive) return System.Address;
+	function Get_Code_Word_Address_Unsafe(Pool : in out Heap; Index : in Natural) return System.Address;
 
 private
 	
@@ -59,8 +59,6 @@ private
 	end record;
 
 	Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
-
-	function Get_Code_Word_Unsafe(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr;
 
 end LibBFCD.Memory_Manager;
 

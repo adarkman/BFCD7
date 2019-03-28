@@ -10,7 +10,7 @@ package LibBFCD.Forth_Vocabulary is
 
 	--pragma Default_Storage_Pool (LibBFCD.Global_Data.Pool);
 
-	function Create_Vocabulary (Pool : in out Heap; Name : in Wide_String) return Vocabulary_Ptr;
+	function Create_Vocabulary (Pool : in out Heap; Name : in Forth_String) return Vocabulary_Ptr;
 
 private	
 

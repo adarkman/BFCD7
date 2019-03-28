@@ -2,7 +2,6 @@ with POSIX;	use POSIX;
 with POSIX.Memory_Mapping;
 with POSIX.Configurable_System_Limits;
 with Ada.Unchecked_Conversion;
-with System.Address_To_Access_Conversions;
 with Interfaces.C;
 with Ada.Text_IO; use Ada.Text_IO;
 
@@ -10,16 +9,13 @@ package body LibBFCD.Memory_Manager is
 
 	package Mem renames POSIX.Memory_Mapping;
 	package CSL renames POSIX.Configurable_System_Limits;
-	package Code_Word_Access is new System.Address_To_Access_Conversions (Object => Code_Word);
 	package C renames Interfaces.C;
 	use type System.Address;
 
-	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count) is
+	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
 		use type Mem.Protection_Options;
 	begin
-		Pool.Code_Word_Size := (if (Code_Word'Size rem 8) = 0 
-											then (Code_Word'Size/8)
-											else (Code_Word'Size/8+1));
+		Pool.Code_Word_Size := Code_Word_Size;
 		Pool.Page_Size := Storage_Count(CSL.Page_Size);
 		-- ensure page aligned
 		Pool.Real_Code_Size := (Code_Size/Pool.Page_Size+1)*Pool.Page_Size;
@@ -53,28 +49,24 @@ package body LibBFCD.Memory_Manager is
 	end Init;
 
 	-- Unsafe version - do not check index range, use only if you know what you do
-	function Get_Code_Word_Unsafe(Pool : in out Heap; Index : in Natural) return Code_Word_Ptr is
+	function Get_Code_Word_Address_Unsafe(Pool : in out Heap; Index : in Natural) return System.Address is
 	begin
-		return Code_Word_Ptr(Code_Word_Access.To_Pointer (Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1))));
-	end Get_Code_Word_Unsafe;
+		return Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1));
+	end Get_Code_Word_Address_Unsafe;
 
-	function Get_Code_Word(Pool : in out Heap; Index : in Positive) return Code_Word_Ptr is
+	function Get_Code_Word_Address(Pool : in out Heap; Index : in Positive) return System.Address is
 		use type System.Address;
 	begin
 		if Index > Pool.Code_Top then raise Code_Range_Error; end if;
-		return Get_Code_Word_Unsafe(Pool, Index);
-	end Get_Code_Word;
+		return Get_Code_Word_Address_Unsafe(Pool, Index);
+	end Get_Code_Word_Address;
 
-	function Allocate_Code_Word(Pool : in out Heap; Data_Type : in Word_Type) return Code_Word_Ptr is
-		ptr : Code_Word_Ptr;
-		word : Code_Word(Data_Type);
+	function Allocate_Code_Word_Address(Pool : in out Heap; Index : out Positive) return System.Address is
 	begin
 		Pool.Code_Top := Pool.Code_Top+1;
-		ptr := Get_Code_Word_Unsafe (Pool, Pool.Code_Top);
-		word.index := Pool.Code_Top;
-		ptr.all := word; -- ensure memory initialized
-		return ptr;
-	end Allocate_Code_Word;
+		Index := Pool.Code_Top;
+		return Get_Code_Word_Address_Unsafe (Pool, Pool.Code_Top);
+	end Allocate_Code_Word_Address;
 
 	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.Real_Size);
 

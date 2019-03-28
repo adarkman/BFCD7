@@ -1,5 +1,11 @@
+GNATMAKE=gnatmake-7.3.1
+GNATBIND=gnatbind-7.3.1
+GNATLINK=gnatlink-7.3.1
 all:
-	gnatmake-7.3.1 -c ./memory_manager_test.adb -I.. -A../../ada-libs/florist_3.5.0_20040403.src/floristlib
-	gnatbind-7.3.1 ./memory_manager_test -aO../ -aO../../ada-libs/florist_3.5.0_20040403.src/floristlib
-	gnatlink-7.3.1 memory_manager_test -I../../ada-libs/florist_3.5.0_20040403.src -I.. -lflorist -A../../ada-libs/florist_3.5.0_20040403.src/floristlib ../malloc.o
+	$(GNATMAKE) -g -c ./memory_manager_test.adb -I.. -A../../ada-libs/florist_3.5.0_20040403.src/floristlib
+	$(GNATBIND) ./memory_manager_test -aO../ -aO../../ada-libs/florist_3.5.0_20040403.src/floristlib
+	$(GNATLINK) memory_manager_test -I../../ada-libs/florist_3.5.0_20040403.src -I.. -lflorist -A../../ada-libs/florist_3.5.0_20040403.src/floristlib ../malloc.o
+
+clean:
+	rm *.o *.ali
 
