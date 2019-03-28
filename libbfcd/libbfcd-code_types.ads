@@ -10,35 +10,34 @@ with LibBFCD.Memory_Manager;
 
 package LibBFCD.Code_Types is
 
-	Pool : Memory_Manager.Heap;
-
-	-- Forth Word type
+	--
+	-- Forth Word types
+	--
 	type Forth_Word_Ptr is access procedure;
 
 	type Forth_String is new Wide_String;
-	type Forth_String_Ptr is access all Forth_String 
-		with Storage_Pool => Pool;
 
 	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code, Type_Vocabulary);
 
+	--
+	-- Forth Vocabulary data --
+	--
 	type Code_Word;
-	
 	type Vocabulary_Element is record
 		word : access Code_Word;
 		next : access all Vocabulary_Element;
 	end record;
-	type Element_Ptr is access Vocabulary_Element;
-	--for Element_Ptr'Storage_Pool use LibBFCD.Global_Data.Pool;
 
 	type Vocabulary_ID is new Positive;
 	type Vocabulary is record
-		Name : Forth_String_Ptr;
-		elements : Element_Ptr;
+		Name : access Forth_String;
+		elements : access Vocabulary_Element;
 		next : access all Vocabulary;
 	end record;
-	type Vocabulary_Ptr is access all Vocabulary 
-		with Storage_Pool => Pool;
 
+	--
+	-- Forth Word with Data
+	-- 
 	type Forth_Data_Word(Data_Type : Forth_Data_Type := Type_Double) is record
 		case Data_Type is
 			when Type_Integer =>
@@ -54,6 +53,9 @@ package LibBFCD.Code_Types is
 		end case;
 	end record;
 
+	--
+	-- Forth Code
+	--
 	type Word_Type is (Binary_Word, Data_Word, Forth_Word);
 	type Code_Word_Flags is (None, Immediate);
 		for Code_Word_Flags use (None => 0, Immediate => 1);
@@ -79,7 +81,7 @@ package LibBFCD.Code_Types is
 	package Code_Word_Access is new System.Address_To_Access_Conversions (Object => Code_Word);
 	subtype Code_Word_Ptr is Code_Word_Access.Object_Pointer;
 
-	procedure Init_Global_Memory_Pool (Code_Size, Data_Size : Storage_Count);
+	procedure Init_Local_Memory_Pool (Pool : in out Memory_Manager.Heap; Code_Size, Data_Size : Storage_Count);
 
 	function Get_Code_Word(Pool : in out Memory_Manager.Heap; Index : in Positive) return Code_Word_Ptr;
 	function Allocate_Code_Word(Pool : in out Memory_Manager.Heap; Data_Type : in Word_Type) return Code_Word_Ptr;

@@ -1,12 +1,13 @@
 
 package body LibBFCD.VM_Thread is
 
-	protected body Compiler is
-		procedure Init(aPool : Memory_Manager.Heap) is
-		begin
-			Pool := aPool;
-		end Init;
-	end Compiler;
+	task body Forth_Thread is
+		v1 : access Vocabulary;
+	begin
+		accept Test do
+			v1 := Create_Vocabulary(Pool.all, "AAA");
+		end Test;
+	end Forth_Thread;
 
 end LibBFCD.VM_Thread;
 

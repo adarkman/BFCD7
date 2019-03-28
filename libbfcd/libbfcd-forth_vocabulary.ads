@@ -8,7 +8,7 @@ with LibBFCD.Global_Data;
 
 package LibBFCD.Forth_Vocabulary is
 
-	function Create_Vocabulary (Pool : in out Heap; Name : in Forth_String) return Vocabulary_Ptr;
+	function Create_Vocabulary (Pool : in out Heap; Name : in Forth_String) return access Vocabulary;
 
 private	
 

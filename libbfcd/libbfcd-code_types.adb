@@ -3,10 +3,10 @@ with LibBFCD; use LibBFCD;
 
 package body LibBFCD.Code_Types is
 
-	procedure Init_Global_Memory_Pool (Code_Size, Data_Size : Storage_Count) is
+	procedure Init_Local_Memory_Pool (Pool : in out Memory_Manager.Heap; Code_Size, Data_Size : Storage_Count) is
 	begin
 		Memory_Manager.Init (Pool, Code_Size, Data_Size, Code_Word_Size);
-	end Init_Global_Memory_Pool;
+	end Init_Local_Memory_Pool;
 	
 	-- Unsafe version - do not check index range, use only if you know what you do
 	function Get_Code_Word_Unsafe(Pool : in out memory_Manager.Heap; Index : in Natural) return Code_Word_Ptr is
