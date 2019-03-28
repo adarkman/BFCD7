@@ -4,6 +4,7 @@ with POSIX.Configurable_System_Limits;
 with Ada.Unchecked_Conversion;
 with Interfaces.C;
 with Ada.Text_IO; use Ada.Text_IO;
+with POSIX.Implementation; use POSIX.Implementation;
 
 package body LibBFCD.Memory_Manager is
 
@@ -12,10 +13,13 @@ package body LibBFCD.Memory_Manager is
 	package C renames Interfaces.C;
 	use type System.Address;
 
-	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive; Flags : Heap_Type := Heap_Fixed) is
+	function mremap(old_address : System.Address; old_size: C.size_t;
+		new_size : C.size_t; flags : C.int; new_addres : System.Address) return System.Address;
+	pragma Import (C, mremap, "mremap");
+
+	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
 	begin
 		Init (Pool, Code_Size, Data_Size, Code_Word_Size);
-		Pools_Map.Insert(Pools, Pool.Base, Pool.Real_Size);
 	end Create_Pool;
 
 	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
@@ -29,9 +33,9 @@ package body LibBFCD.Memory_Manager is
 		--
 		Pool.Real_Size := Pool.Real_Code_Size + Pool.Real_Data_Size;
 		--Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
-		Pool.Base := Mem.Map_Memory_Anonymous(To_Address(140573701693440), Pool.Real_Size, 
+		Pool.Base := Mem.Map_Memory_Anonymous(To_Address(0), Pool.Real_Size, 
 			Mem.Allow_Read + Mem.Allow_Write,
-			Mem.Map_Shared, Mem.Exact_Address); -- or Mem.Nearby_Address
+			Mem.Map_Private, Mem.Nearby_Address); --Mem.Exact_Address); -- or Mem.Nearby_Address
 		--
 		Pool.Code := Pool.Base; --  Code started at mmaped area start
 		Put_Line("Heap init: " & Integer_Address'Image(To_Integer(Pool.Base)));
@@ -40,21 +44,40 @@ package body LibBFCD.Memory_Manager is
 		--
 		Pool.Data := Pool.Code+Storage_Offset(Pool.Real_Code_Size);
 		Put_Line("Heap data: " & Integer_Address'Image(To_Integer(Pool.Data)));
-		Pool.Data_MSpace := create_mspace_with_base (Pool.Data, size_t(Pool.Real_Data_Size), 1);
-		if Pool.Data_MSpace = mspace(To_Address(0)) then raise Memory_Mapping_Error; end if;
-		-- MSPACE tuning
-		declare 
-			track : C.int; 
-			limit : size_t; 
-		begin null;
-			-- disable separated allocation of large chunks
-			track := mspace_track_large_chunks (Pool.Data_MSpace, 1); 
-			-- disable additional system memory chunks allocation
-			limit := mspace_set_footprint_limit (Pool.Data_MSpace, 0);  
-		end;
+		Pool.Data_MSpace := Create_MSpace (Pool.Data, Pool.Real_Data_Size);
 		--
 		Pool.Allocated := Memory_Map.Empty_Map;
 	end Init;
+
+	function Create_MSpace(Base : System.Address; Size : Storage_Count) return mspace is 
+		m : mspace;
+	begin
+		m := create_mspace_with_base (Base, C.size_t(Size), 1);
+		if m = mspace(To_Address(0)) then raise Memory_Mapping_Error; end if;
+		-- MSPACE tuning
+		declare 
+			track : C.int; 
+			limit : C.size_t; 
+		begin null;
+			-- disable separated allocation of large chunks
+			track := mspace_track_large_chunks (m, 1); 
+			-- disable additional system memory chunks allocation
+			limit := mspace_set_footprint_limit (m, 0);  
+		end;
+		Put_Line("MSpace: " & Integer_Address'Image(To_Integer(System.Address(m))));
+		return m;
+	end Create_MSpace;
+
+	procedure Resize_Pool (Pool : in out Heap; New_Size_Delta : Storage_Count) is
+		m : System.Address;
+	begin
+		m := mremap (Pool.Base, C.size_t(Pool.Real_Size), C.size_t(Pool.Real_Size+New_Size_Delta), 1, To_Address(0));
+		if m = To_Address(-1) then 
+			Put_Line("ERRNO: " & Error_Code'Image(Get_Ada_Error_Code));
+			raise Remap_Failed; 
+		end if;
+		Put_Line("Resize_Pool: " & Integer_Address'Image(To_Integer(m)));
+	end Resize_Pool;
 
 	-- Unsafe version - do not check index range, use only if you know what you do
 	function Get_Code_Word_Address_Unsafe(Pool : in out Heap; Index : in Natural) return System.Address is
@@ -84,7 +107,7 @@ package body LibBFCD.Memory_Manager is
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
 	begin
-		Address := mspace_malloc (Pool.Data_MSpace, size_t(Size));
+		Address := mspace_malloc (Pool.Data_MSpace, C.size_t(Size));
 		Put("Alloc: " & Integer_Address'Image(To_Integer(Address)));
 		Put_Line(" " & Storage_Count'Image(Size));
 		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;

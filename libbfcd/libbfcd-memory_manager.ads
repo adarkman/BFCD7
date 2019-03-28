@@ -9,22 +9,20 @@ with Ada.Containers.Ordered_Maps;
 
 package LibBFCD.Memory_Manager is
 
-	-- нельзя сохраняться на диск если есть 
-	-- выделенные Storage_Pool с флагом Heap_Temporary
-	type Heap_Type is (Heap_Fixed, Heap_Temporary); 
 	type Heap is new Root_Storage_Pool with private;
 
 	Memory_Mapping_Error : exception;
 	Memory_Allocation_Error : exception;
 	Code_Range_Error : exception;
+	Remap_Failed : exception;
 
 	-- Внимание ! 
 	-- Если не хотим странных косяков, то Pool используется только как instance 
 	-- т.е. 'Pool : aliased Heap', никаких 'access' и прочих '...Ptr' - иначе 
 	-- Ада нормально не работает с динамически создаваемыми пулами.
 	-- Это как-то связано с областью видимости, - надо копать RM'12.
-	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive; Flags : Heap_Type := Heap_Fixed);
-	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
+	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
+	procedure Resize_Pool (Pool : in out Heap; New_Size_Delta : Storage_Count);
 
 	overriding
 	procedure Allocate (
@@ -61,7 +59,7 @@ private
 		Element_Type => Boolean);
 
 	--
-	-- Main Forth storage pool
+	-- Main Forth storage pool type - Each VM Thread have pesonal 'Heap' instance
 	--
 	type Heap is new Root_Storage_Pool with record
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
@@ -76,6 +74,8 @@ private
 		Code_Word_Array_Size : Positive;	-- code pool size calculated in Code_Word's
 		--
 		Data : System.Address;				-- Data pool base address
+		-- Здесь должен быть список MSpace'ов создаваемых
+		-- по мере расширения пула через mremap(2)
 		Data_MSpace : mspace;				-- Data MSpace for Doug Lea malloc
 		--
 		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
@@ -84,13 +84,12 @@ private
 	--Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
 	
 	--
-	-- Dynamic Pool Maps
+	-- Internal procedures
 	--
-	package Pools_Map is new Ada.Containers.Ordered_Maps (
-		Key_Type => System.Address,
-		Element_Type => Storage_Count);
-
-	Pools : Pools_Map.Map := Pools_Map.Empty_Map;
+	-- Initialise newly created Pool
+	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
+	-- Create new mspace
+	function Create_MSpace(Base : System.Address; Size : Storage_Count) return mspace;
 
 end LibBFCD.Memory_Manager;
 

@@ -6,7 +6,7 @@ with System;
 
 package malloc_2_8_6_h is
 
-	subtype size_t is unsigned_long;	
+	--subtype size_t is unsigned_long;	
 
    MSPACES : constant := 1;  --  ./malloc-2.8.6.h:32
 

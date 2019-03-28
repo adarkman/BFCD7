@@ -82,7 +82,6 @@ package LibBFCD.Code_Types is
 	subtype Code_Word_Ptr is Code_Word_Access.Object_Pointer;
 
 	procedure Create_Local_Memory_Pool (Pool: in out Memory_Manager.Heap; Code_Size, Data_Size : Storage_Count);
-	procedure Init_Local_Memory_Pool (Pool : in out Memory_Manager.Heap; Code_Size, Data_Size : Storage_Count);
 
 	function Get_Code_Word(Pool : in out Memory_Manager.Heap; Index : in Positive) return Code_Word_Ptr;
 	function Allocate_Code_Word(Pool : in out Memory_Manager.Heap; Data_Type : in Word_Type) return Code_Word_Ptr;
