@@ -22,9 +22,10 @@ package body LibBFCD.Memory_Manager is
 		Pool.Real_Data_Size := (Data_Size/Pool.Page_Size+1)*Pool.Page_Size;
 		--
 		Pool.Real_Size := Pool.Real_Code_Size + Pool.Real_Data_Size;
-		Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
+		--Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
+		Pool.Base := Mem.Map_Memory_Anonymous(To_Address(140573701693440), Pool.Real_Size, 
 			Mem.Allow_Read + Mem.Allow_Write,
-			Mem.Map_Shared, Mem.Exact_Address);
+			Mem.Map_Shared, Mem.Exact_Address); -- or Mem.Nearby_Address
 		--
 		Pool.Code := Pool.Base; --  Code started at mmaped area start
 		Put_Line("Heap init: " & Integer_Address'Image(To_Integer(Pool.Base)));
