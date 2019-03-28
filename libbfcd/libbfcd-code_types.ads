@@ -33,7 +33,8 @@ package LibBFCD.Code_Types is
 	type Vocabulary_ID is new Positive;
 	type Vocabulary is record
 		Name : Forth_String_Ptr;
-		first : Element_Ptr;
+		elements : Element_Ptr;
+		next : access all Vocabulary;
 	end record;
 	type Vocabulary_Ptr is access all Vocabulary 
 		with Storage_Pool => Pool;

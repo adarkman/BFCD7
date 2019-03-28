@@ -7,11 +7,11 @@ procedure Memory_Manager_Test is
 	use type System.Storage_Elements.Storage_Offset;
 	pragma Default_Storage_Pool(LibBFCD.Code_Types.Pool);
 	v1 : access Vocabulary;
-	s : access Wide_String;
+	s : Forth_String_Ptr;
 begin
 	Init_Global_Memory_Pool(1024*1024,1024*1024);
-	s := new Wide_String'("");
+	s := new Forth_String'("FORTH");
 	v1 := new Vocabulary;
-	v1 := Create_Vocabulary (LibBFCD.Code_Types.Pool, "");
+	v1 := Create_Vocabulary (LibBFCD.Code_Types.Pool, "FORTH");
 end Memory_Manager_Test;
 
