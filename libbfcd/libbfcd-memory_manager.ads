@@ -9,12 +9,21 @@ with Ada.Containers.Ordered_Maps;
 
 package LibBFCD.Memory_Manager is
 
+	-- нельзя сохраняться на диск если есть 
+	-- выделенные Storage_Pool с флагом Heap_Temporary
+	type Heap_Type is (Heap_Fixed, Heap_Temporary); 
 	type Heap is new Root_Storage_Pool with private;
 
 	Memory_Mapping_Error : exception;
 	Memory_Allocation_Error : exception;
 	Code_Range_Error : exception;
 
+	-- Внимание ! 
+	-- Если не хотим странных косяков, то Pool используется только как instance 
+	-- т.е. 'Pool : Heap', никаких 'access' и прочих '...Ptr' - иначе 
+	-- Ада нормально не работает с динамически создаваемыми пулами.
+	-- Это как-то связано с областью видимости, - надо копать RM'12.
+	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive; Flags : Heap_Type := Heap_Fixed);
 	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
 
 	overriding
@@ -72,7 +81,16 @@ private
 		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
 	end record;
 
-	Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
+	--Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
+	
+	--
+	-- Dynamic Pool Maps
+	--
+	package Pools_Map is new Ada.Containers.Ordered_Maps (
+		Key_Type => System.Address,
+		Element_Type => Storage_Count);
+
+	Pools : Pools_Map.Map := Pools_Map.Empty_Map;
 
 end LibBFCD.Memory_Manager;
 

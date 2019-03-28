@@ -3,6 +3,11 @@ with LibBFCD; use LibBFCD;
 
 package body LibBFCD.Code_Types is
 
+	procedure Create_Local_Memory_Pool (Pool : in out Memory_Manager.Heap; Code_Size, Data_Size : Storage_Count) is
+	begin
+		Memory_Manager.Create_Pool(Pool, Code_Size, Data_Size, Code_Word_Size);
+	end Create_Local_Memory_Pool;
+
 	procedure Init_Local_Memory_Pool (Pool : in out Memory_Manager.Heap; Code_Size, Data_Size : Storage_Count) is
 	begin
 		Memory_Manager.Init (Pool, Code_Size, Data_Size, Code_Word_Size);

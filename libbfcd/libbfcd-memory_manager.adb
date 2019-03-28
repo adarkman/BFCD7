@@ -12,6 +12,12 @@ package body LibBFCD.Memory_Manager is
 	package C renames Interfaces.C;
 	use type System.Address;
 
+	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive; Flags : Heap_Type := Heap_Fixed) is
+	begin
+		Init (Pool, Code_Size, Data_Size, Code_Word_Size);
+		Pools_Map.Insert(Pools, Pool.Base, Pool.Real_Size);
+	end Create_Pool;
+
 	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
 		use type Mem.Protection_Options;
 	begin
