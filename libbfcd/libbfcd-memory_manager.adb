@@ -110,7 +110,9 @@ package body LibBFCD.Memory_Manager is
 		Address : out System.Address;
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
+		free : Storage_Count;
 	begin
+		free := Get_Current_Free_Space (Pool);
 		Address := mspace_malloc (Pool.Data_MSpace, C.size_t(Size));
 		Put("Alloc: " & Integer_Address'Image(To_Integer(Address)));
 		Put_Line(" " & Storage_Count'Image(Size));
@@ -128,6 +130,13 @@ package body LibBFCD.Memory_Manager is
 		mspace_free (Pool.Data_MSpace, Address);
 		Memory_Map.Delete(Pool.Allocated, Address);
 	end Deallocate;
+
+	function Get_Current_Free_Space(Pool : in Heap) return Storage_Count is
+		m : mallinfo := mspace_mallinfo (Pool.Data_MSpace);
+	begin
+		Put_Line ("Free in MSpace: " & C.size_t'Image(m.fordblks));
+		return Storage_Count(m.fordblks);
+	end Get_Current_Free_Space;
 
 end LibBFCD.Memory_Manager;
 

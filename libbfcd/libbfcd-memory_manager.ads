@@ -63,10 +63,7 @@ private
 	--
 	type Heap is new Root_Storage_Pool with record
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
-		--Size : Storage_Count;				-- Code_Size+Data_Size
-		--Base : System.Address;				-- Heap_Base
 		Page_Size : Storage_Count;			-- Get from system via 'sysconf'
-		--Real_Size : Storage_Count;			-- Size wish pads, PAGE aligned
 		--
 		Code : System.Address;				-- code pool
 		Code_Word_Size : Positive;			-- size of Code_Word
@@ -81,7 +78,7 @@ private
 		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
 	end record;
 
-	--Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
+	Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
 	
 	--
 	-- Internal procedures
@@ -90,6 +87,8 @@ private
 	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
 	-- Create new mspace
 	function Create_MSpace(Base : System.Address; Size : Storage_Count) return mspace;
+
+	function Get_Current_Free_Space(Pool : in Heap) return Storage_Count;
 
 end LibBFCD.Memory_Manager;
 
