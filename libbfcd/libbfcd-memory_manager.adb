@@ -31,20 +31,24 @@ package body LibBFCD.Memory_Manager is
 		Pool.Real_Code_Size := (Code_Size/Pool.Page_Size+1)*Pool.Page_Size;
 		Pool.Real_Data_Size := (Data_Size/Pool.Page_Size+1)*Pool.Page_Size;
 		--
-		Pool.Real_Size := Pool.Real_Code_Size + Pool.Real_Data_Size;
-		--Pool.Base := Mem.Map_Memory_Anonymous(Heap_Base, Pool.Real_Size, 
-		Pool.Base := Mem.Map_Memory_Anonymous(To_Address(0), Pool.Real_Size, 
-			Mem.Allow_Read + Mem.Allow_Write,
-			Mem.Map_Private, Mem.Nearby_Address); --Mem.Exact_Address); -- or Mem.Nearby_Address
+		if Pool.Real_Code_Size > 0 then 
+			Pool.Code := Mem.Map_Memory_Anonymous(To_Address(0), Pool.Real_Code_Size, 
+				Mem.Allow_Read + Mem.Allow_Write,
+				Mem.Map_Private, Mem.Nearby_Address); --Mem.Exact_Address); -- or Mem.Nearby_Address
+			--
+			Put_Line("Heap Code init: " & Integer_Address'Image(To_Integer(Pool.Code)));
+			Pool.Code_Top := 1;
+			Pool.Code_Word_Array_Size := Positive(Pool.Real_Code_Size)/Pool.Code_Word_Size-1; -- (-1) - ensure we are have pad
+			Put_Line("Code array size: " & Natural'Image(Pool.Code_Word_Array_Size));
+		end if;
 		--
-		Pool.Code := Pool.Base; --  Code started at mmaped area start
-		Put_Line("Heap init: " & Integer_Address'Image(To_Integer(Pool.Base)));
-		Pool.Code_Top := 1;
-		Pool.Code_Word_Array_Size := Positive(Pool.Real_Code_Size)/Pool.Code_Word_Size-1; -- (-1) - ensure we are have pad
-		--
-		Pool.Data := Pool.Code+Storage_Offset(Pool.Real_Code_Size);
-		Put_Line("Heap data: " & Integer_Address'Image(To_Integer(Pool.Data)));
-		Pool.Data_MSpace := Create_MSpace (Pool.Data, Pool.Real_Data_Size);
+		if Pool.Real_Data_Size > 0 then
+			Pool.Data := Mem.Map_Memory_Anonymous(To_Address(0), Pool.Real_Data_Size, 
+				Mem.Allow_Read + Mem.Allow_Write,
+				Mem.Map_Private, Mem.Nearby_Address); --Mem.Exact_Address); -- or Mem.Nearby_Address
+			Put_Line("Heap data: " & Integer_Address'Image(To_Integer(Pool.Data)));
+			Pool.Data_MSpace := Create_MSpace (Pool.Data, Pool.Real_Data_Size);
+		end if;	
 		--
 		Pool.Allocated := Memory_Map.Empty_Map;
 	end Init;
@@ -71,7 +75,7 @@ package body LibBFCD.Memory_Manager is
 	procedure Resize_Pool (Pool : in out Heap; New_Size_Delta : Storage_Count) is
 		m : System.Address;
 	begin
-		m := mremap (Pool.Base, C.size_t(Pool.Real_Size), C.size_t(Pool.Real_Size+New_Size_Delta), 1, To_Address(0));
+		m := mremap (Pool.Data, C.size_t(Pool.Real_Data_Size), C.size_t(Pool.Real_Data_Size+New_Size_Delta), 1, To_Address(0));
 		if m = To_Address(-1) then 
 			Put_Line("ERRNO: " & Error_Code'Image(Get_Ada_Error_Code));
 			raise Remap_Failed; 
@@ -99,7 +103,7 @@ package body LibBFCD.Memory_Manager is
 		return Get_Code_Word_Address_Unsafe (Pool, Pool.Code_Top);
 	end Allocate_Code_Word_Address;
 
-	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.Real_Size);
+	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.Real_Data_Size);
 
 	procedure Allocate (
 		Pool : in out Heap;

@@ -63,15 +63,15 @@ private
 	--
 	type Heap is new Root_Storage_Pool with record
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
-		Size : Storage_Count;				-- Code_Size+Data_Size
-		Base : System.Address;				-- Heap_Base
+		--Size : Storage_Count;				-- Code_Size+Data_Size
+		--Base : System.Address;				-- Heap_Base
 		Page_Size : Storage_Count;			-- Get from system via 'sysconf'
-		Real_Size : Storage_Count;			-- Size wish pads, PAGE aligned
+		--Real_Size : Storage_Count;			-- Size wish pads, PAGE aligned
 		--
 		Code : System.Address;				-- code pool
 		Code_Word_Size : Positive;			-- size of Code_Word
 		Code_Top : Positive;				-- Top Index of Allocated Code_Word, start from '1'
-		Code_Word_Array_Size : Positive;	-- code pool size calculated in Code_Word's
+		Code_Word_Array_Size : Natural;	-- code pool size calculated in Code_Word's
 		--
 		Data : System.Address;				-- Data pool base address
 		-- Здесь должен быть список MSpace'ов создаваемых

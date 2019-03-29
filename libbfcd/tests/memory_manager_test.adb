@@ -22,7 +22,7 @@ begin
 		t1.Test;
 	end;
 	v1 := new Vocabulary;
-	Resize_Pool (Pool, 1024*1024*2);
+	--Resize_Pool (Pool, 1024*1024*2);
 	s := new Forth_String'("FORTH !!!");
 	v1 := Create_Vocabulary (Pool, "FORTH");
 end Memory_Manager_Test;
