@@ -1,0 +1,91 @@
+-*- mode: text -*-
+
+Introduction
+============
+
+The Ada 95 Booch Components (BCs for short) can be used without
+special installation. After unpacking, all the source files are in the
+src/ subdirectory of the distribution. For compilers other than GNAT,
+it should be enough to import these source files in the appropriate
+way.
+
+Use with GNAT
+=============
+
+Simple source inclusion
+-----------------------
+
+For GNAT, a similar technique can be applied: include the source
+directory in the compiler source path,
+
+   $ gnatmake -I$HOME/bc-20110809/src foo.adb
+
+Using GNAT Project
+------------------
+
+Alternatively, using the GNAT Project facility, add bc.gpr to your
+project's "with"s:
+
+   with "/Users/simon/bc-20110809/bc";
+   project Foo is
+      ...
+
+With this approach, you can choose to use a static or relocatable
+version of the library; the default is static. There's no great
+advantage to choosing the relocatable version, since the BCs are
+mainly generic and most of the object code will be in the
+instantiations, in your library. Also, the relocatable version needs
+to be located at run time, and at the time of writing (20110809) this
+is only assured on Mac OS X.
+
+To override the default, set LIBRARY_TYPE to "relocatable", either in
+the environment or using the -XLIBRARY_TYPE=relocatable flag to
+gnatmake or gprbuild. This flag is used for the same purpose in
+AdaCore's library components (GNATcoll, XML/Ada etc), though possibly
+with a different default.
+
+Rather than explicitly naming the location of bc.gpr in your own GPR
+files, a better way of using GNAT Project is to add the BC's top-level
+directory to your ADA_PROJECT_PATH or GPR_PROJECT_PATH environment
+variable: in the shell, or (the equivalent of) ~/.bashrc:
+
+   $ export ADA_PROJECT_PATH=~/bc-20110809:$ADA_PROJECT_PATH
+
+and then, in the GPR,
+
+   with "bc";
+   project Foo is
+      ...
+
+Note, you will need to use the '-p' switch to gnatmake or gprbuild to
+tell them to create the necessary build directories.
+
+Installation with the compiler
+------------------------------
+
+If you're using GCC or GNAT GPL, the best way is to install the BCs
+alongside your compiler. Note, THIS DOES NOT WORK WITH DEBIAN (yet),
+because of its different approach to file system layout for the Ada
+subsystem.
+
+The remaining instructions assume use on a Unix machine, or Cygwin if
+on Windows.
+
+In the top level of the BCs, say
+
+   $ ./configure
+
+This uses the output of gnatls -v to work out where to install the BCs
+if you decide to; on this Mac OS X machine, it's under
+/opt/gnat-gpl-2011/.
+
+Then,
+
+   $ make
+
+to build both static and relocatable versions of the library, followed
+by
+
+   $ make install
+
+(you may need to do this as root on Unix systems).

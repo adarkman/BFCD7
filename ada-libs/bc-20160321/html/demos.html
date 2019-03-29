@@ -1,0 +1,296 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html version="2.0" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="generator" content=
+"HTML Tidy for Mac OS X (vers 1st December 2004), see www.w3.org" />
+<title>The Ada95 Booch Components</title>
+<link href="bc.css" rel="stylesheet" type="text/css"/>
+</head>
+<body bgcolor="#FFFFFF">
+<table width="100%">
+<tr>
+<td><img src="ada95lgo.gif" alt=
+"The (free) Ada95 Booch Components" /></td>
+<td align="right"><a href="http://sourceforge.net/projects/booch95"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=135616&type=16"
+width="150" height="40" border="0" alt="Get Ada 95 Booch Components at
+SourceForge.net. Fast, secure and Free Open Source software downloads"
+/></a></td>
+</tr>
+</table>
+<p><i>Demo and test code</i></p>
+<p><img src="greenline.gif" alt="--" width="100%" height="4" /></p>
+<h2>Test programs</h2>
+<table border="1">
+<tr>
+<th>Main</th>
+<th>Description</th>
+<th>GNAT 3.14p</th>
+<th>GNAT 3.15a</th>
+<th>GCC 3.1</th>
+<th>OA 7.2.2</th>
+</tr>
+<tr>
+<td>avl_test</td>
+<td>test AVL trees</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>bag_test</td>
+<td>test bounded, dynamic and unbounded bags</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>collection_test</td>
+<td>test bounded, dynamic and unbounded collections</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>deque_test</td>
+<td>test bounded, dynamic and unbounded deques</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>graph_test</td>
+<td>test directed and undirected graphs</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>list_test</td>
+<td>test single and double lists</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>map_test</td>
+<td>test bounded, dynamic and unbounded maps</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>ordered_collection_test</td>
+<td>test bounded, dynamic and unbounded ordered collections</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>ordered_queue_test</td>
+<td>test bounded, dynamic and unbounded ordered queues</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>queue_test</td>
+<td>test bounded, dynamic and unbounded queues</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>ring_test</td>
+<td>test bounded, dynamic and unbounded rings</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>set_test</td>
+<td>test bounded, dynamic and unbounded sets</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>smart_test</td>
+<td>test smart pointers</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>sort_test</td>
+<td>test sorts</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>stack_test</td>
+<td>test bounded, dynamic and unbounded stacks</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>stream_test</td>
+<td>test 'Output, 'Input for those components that support
+them</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>Constraint_Error with discriminated records (simple and tagged
+types ok)</td>
+</tr>
+<tr>
+<td>tree_test</td>
+<td>test AVL, binary and multiway trees</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+</table>
+<h2>Demo programs</h2>
+<table border="1">
+<tr>
+<th>Main</th>
+<th>Description</th>
+<th>GNAT 3.14p</th>
+<th>GNAT 3.15a</th>
+<th>GCC 3.1</th>
+<th>OA 7.2.2</th>
+</tr>
+<tr>
+<td>ada_units</td>
+<td>demonstrate graphs</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>configuration_demo</td>
+<td>demonstrate using Maps to implement a configuration
+facility</td>
+<td>ok</td>
+<td>Program_Error (finalize raised exception)</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>lists_traversal</td>
+<td>demonstrate an unexpected behaviour of double lists</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>Program_Error (finalization problem?)</td>
+</tr>
+<tr>
+<td>ordering_test</td>
+<td>demonstrate ordered containers, especially where different
+elements have equal keys</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>storage</td>
+<td>demonstrate managed and unmanaged store allocation</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>test_synchronization</td>
+<td>demonstrate the functionality in
+<tt>BC.Support.Synchronization</tt></td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>time_lists</td>
+<td>demonstrate timings for lists of varying lengths</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>time_queues</td>
+<td>demonstrate timings for queues of varying lengths</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>unmanaged_storage</td>
+<td>demonstrate use of <tt>Unmanaged_Storage</tt></td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>user_map</td>
+<td>demonstrate maps with user-defined equality for the key
+type</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>Program_Error (finalization?)</td>
+</tr>
+<tr>
+<td>user_set</td>
+<td>demonstrate user-defined equality for sets</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>word_count</td>
+<td>a word-counter demo, as suggested by <a href=
+"mailto:J.English@bton.ac.uk">John English</a> in the first Ada
+Standard Component Library Working Group<br />
+<strong>NB</strong>, as supplied this fails if the last line of the
+input is blank!</td>
+<td>ok</td>
+<td>ok</td>
+<td>ok</td>
+<td>Doesn't compile as it stands (needs to be gnatchop'd)</td>
+</tr>
+</table>
+<p><img src="greenline.gif" alt="--" width="100%" height="4" /></p>
+<p><a href="index.html">[index]</a></p>
+<p><i><script type="text/javascript">
+//<![CDATA[
+document.write("Last update: ");
+document.write(document.lastModified);
+//]]>
+</script></i></p>
+</body>
+</html>

@@ -1,0 +1,838 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html version="2.0" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="generator" content=
+"HTML Tidy for Mac OS X (vers 1st December 2004), see www.w3.org" />
+<title>The Ada95 Booch Components (Release notes)</title>
+<link href="bc.css" rel="stylesheet" type="text/css"/>
+<style type="text/css">dt {font-size: 1.5em; font-weight: bold;</style>
+</head>
+<body bgcolor="white">
+<table width="100%">
+<tr>
+<td><img src="ada95lgo.gif" alt=
+"The (free) Ada95 Booch Components" /></td>
+<td align="right"><a href="http://sourceforge.net/projects/booch95"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=135616&type=16"
+width="150" height="40" border="0" alt="Get Ada 95 Booch Components at
+SourceForge.net. Fast, secure and Free Open Source software downloads"
+/></a></td>
+</tr>
+</table>
+<p><i>Release notes</i></p>
+<p><img src="greenline.gif" alt="--" width="100%" height="4" /></p>
+<dl>
+
+<!--
+<dt>DATE</dt>
+<dd>
+<p><b>Interface changes</b></p>
+<p><b>Implementation changes</b></p>
+<p><b>Documentation changes</b></p>
+</dd>
+ -->
+
+<dt>21 March 2016</dt>
+<dd>
+<p><b>Interface changes</b></p>
+<p>Removed the dynamic and unmanaged forms of indefinite containers,
+as originally noted in the 20110612 release (thanks to David Henry for
+pointing this out).</p>
+<p><b>Implementation changes</b></p>
+<p>Small performance improvement in <t>Clear</t> for unbounded and
+unmanaged forms.</p>
+<p>Removed warnings from GCC 4.9.0 (mainly style).</p>
+<p><t>Shellsort</t> raises <t>Sort_Error</t>,
+not <t>Container_Error</t>, if the wrong kind of Container is
+used.</p>
+<p>The BCs can be built against the Ada 2005 or 2012 standards if
+required; the GNAT Project scenario variable <t>LANGUAGE</t> can be
+set to <t>gnat95</t> (default), <t>gnat05</t> or <t>gnat12</t>.</p>
+<p><b>Documentation changes</b></p>
+<p>To match the interface changes above.</p>
+</dd>
+
+<dt>22 March 2013</dt>
+<dd>
+<p><b>Additions</b>:</p>
+<p>Added <tt>BC.Indefinite_Unmanaged_Containers.Queues.Ordered</tt>.</p>
+<p><b>Other changes</b>:</p>
+<p>A problem with building any indefinite dynamic form under GCC 4.7
+has been resolved.</p>
+<p><tt>BC.Support.Indefinite_Dynamic</tt> was missing.</p>
+<p>Includes a patch to allow use of <tt>bc.gpr</tt> on Debian 6.</p>
+</dd>
+
+<dt>05 December 2011</dt>
+<dd>
+<p><b>Changes to Ordered Collections</b>:</p>
+<p>Ordered Collections are now provided in all forms.</p>
+<p>Although the index parameters to Append(After) and Insert(Before) were
+not used for Ordered Collections, there should have been checks that
+they were in range. Out-of-range values now cause Range_Error to be
+raised.</p>
+<p>The behaviour of Append(After), Insert(Before) and Replace when the
+indicated location contains a value that is equivalent to the current
+value has been improved.</p>
+<p>The behaviour of Replace when the new item is not equivalent to the
+replaced item was not specified (it was always treated as a Remove
+followed by an Insert). It has now been improved.</p>
+<p><b>Changes to Queues</b>:</p>
+<p>Added Indefinite Unmanaged Queues.</p>
+<p><b>Other changes</b>:</p>
+<p><code>make install</code> didn't actually install the source code.</p>
+</dd>
+
+<dt>09 August 2011</dt>
+<dd>
+<p>Can be installed as a library in GCC and GNAT GPL installations.</p>
+<p>All uses of ".all'Access" eliminated.</p></dd>
+
+<dt>22 June 2011</dt>
+<dd><p>Release 20110612 was missing the top-level <tt>bc.gpr</tt> and
+support files for Indefinite Maps.</p>
+<p>Compilation warnings eliminated.</p></dd>
+
+<dt>12 June 2011</dt>
+<dd><p>There was a problem with BC.Support.High_Resolution_Time on 64-bit
+compilers. Cleared by doing the Right Thing and using
+Unchecked_Conversion instead of overlays.</p>
+<p>On Mac OS X Snow Leopard, BC.Support.High_Resolution_Time failed
+because the OS stops the Time Stamp Counter while the processor is
+sleeping. Fortunately, on this OS, the resolution of the system clock
+is 1 microsecond, so an implementation is provided that uses
+Ada.Calendar.Time.</p>
+<p>Pragmas Pure and Preelaborate used where possible.</p>
+<p>Indefinite_Reference.Adjust failed if the Pointer was null (this
+happened wtih Null_Container).</p>
+<p>Finalization of Smart Pointers wasn't idempotent.</p>
+<p>Bags, Maps and Sets allowed predefined equality to emerge (for Maps,
+in the case of keys).</p>
+<p>The dynamic and unmanaged forms of the Indefinite Containers have been
+removed; dynamic on the grounds that it's an unneeded complexity, and
+unmanaged in favour of Indefinite Unmanaged Containers.</p>
+<p>A new tree of Indefinite Unmanaged Containers has been started,
+containing for the moment just Collections and Maps. These provide
+containment for indefinite types without the need for the user to
+provide any storage managers.</p></dd>
+
+<dt>26 Feb 2009</dt>
+<dd>There was a problem with Rings when the Mark denoted an internal
+index before the Top; Insert would improperly increment the Mark.</dd>
+
+<dt>16 Feb 2009</dt>
+<dd>Altered the directory structure to a more standard form; the top
+level is still bc-yyyymmdd, but under that is GNAT/ (supporting GNUAda
+and other Ada projects on SourceForge), src/ for source, tests/ for
+tests and demos/ for demos.<br/>
+Some fixes for Mac OS X.</dd>
+
+<dt>12 Dec 2007</dt>
+<dd>Support release for The GNU Ada Project. This release adds support
+for Sun Solaris to the GNAT project files.</dd>
+
+<dt>22 Aug 2007</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>None.</p>
+<h3>Implementation changes</h3>
+<p>Thanks to Chris Henrich for fixing a problem
+with <tt>BC.Support.Managed_Storage</tt>.</p>
+<p><tt>Top</tt> on an empty <tt>Ring</tt> now
+raises <tt>BC.Underflow</tt>.</p>
+<p>User-defined equality used for <tt>BC.Containers.Trees.AVL</tt>.
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>16 Jul 2006</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>None.</p>
+<h3>Implementation changes</h3>
+<p>The implementations of <tt>Null_Container</tt> used to allocate a
+lot of static memory, to marginal benefit in performance. The new
+implementation creates an empty <tt>Container</tt> on the fly.</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>22 Dec 2005</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>This is the first release which incorporates the indefinite
+containers which have previously been part of AdaCL
+(http://adacl.sf.net/).</p>
+<h3>Implementation changes</h3>
+<p>None.</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>20 Apr 2005</dt>
+<dd>
+<h3>Location</h3>
+<p>This is the first SourceForge release.</p>
+<h3>Interface changes</h3>
+<p><tt>BC.Containers.Trees.AVL</tt> supports Container
+iteration.</p>
+<p><tt>BC.Containers.Trees.Multiway.Append</tt> reworked.</p>
+<p>A new package <tt>BC.Support.Synchronization.Debug</tt> reports
+the use of semaphores and monitors.</p>
+<h3>Implementation changes</h3>
+<p>The support hash table packages on which Bags, Maps and Sets
+rely used default subprogram parameters, which would fail if
+compiled in the presence of (for example) an enumeration type named
+<tt>Location</tt>.</p>
+<p><tt>BC.Support.High_Resolution_Time</tt> now includes support
+for PowerPC G4 (eg, Apple PowerBook).</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>19 Mar 2004</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>The closed generic iterators that take an additional
+<tt>Param</tt> now accept limited indefinite types.</p>
+<p>Some preliminary work has been done on moving Lists and Trees up
+a level; they don't come in the various forms (bounded, dynamic,
+unbounded, unmanaged), and Trees don't support iterators.<br />
+The older versions are still present, for the time being.</p>
+<p>Semaphores (from <tt>BC.Support.Synchronization</tt>) are now
+limited private.</p>
+<h3>Implementation changes</h3>
+<p><tt>BC.Support.Statistics</tt> used to raise
+<tt>Constraint_Error</tt> for negative values.</p>
+<p>The bounded Container forms are no longer <tt>Controlled</tt>.
+This is an efficiency improvement.</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>23 Nov 2003</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>Added <tt>BC.Support.High_Resolution_Time</tt>, which supports
+sub-microsecond interval timing. This version is for GNAT on Linux
+or Windows on x86 processors.</p>
+<p>Added <tt>BC.Support.Statistics</tt>, which supports collecting
+running mean, variance, minimum and maximum of sequences of
+values.</p>
+<h3>Implementation changes</h3>
+<p>BC.Support.Managed_Storage allows allocation of zero-length
+objects (an empty array, or an empty record). Thanks to <a href=
+"mailto:adam@irvine.com">Adam Beneschan</a>.</p>
+<p><tt>BC.Support.Synchronization</tt> no longer exposes the
+controlledness of <tt>Semaphore</tt>.</p>
+<p><tt>BC.Support.Exceptions.Assert</tt> is no longer used (it
+turned out to be rather costly!)</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>15 Aug 2003</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>None.</p>
+<h3>Implementation changes</h3>
+<p>Minor changes to suppress warnings under GNAT 3.16.</p>
+<p>The internal Bounded Hash Table is no longer Controlled.</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>9 Mar 2003</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>New <i>unmanaged</i> forms are provided for all the monolithic
+Containers. This means you don't need to supply a storage pool at
+all (and means you can use GNAT 3.12 if you have to!).</p>
+<h3>Implementation changes</h3>
+<p>In <tt>BC.Support.Memory_Streams</tt>, <tt>Write_Contents</tt>
+did the actual writing one storage element at a time.
+<tt>Read_Contents</tt> requires a supplier <tt>Stream</tt> that has
+datagram properties (unlike, it turns out, <tt>GNAT.Sockets</tt>
+streams, even if based on a datagram protocol).</p>
+<h3>Documentation changes</h3>
+<p>None.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>11 Jan 2003</dt>
+<dd>
+<h3>Licence changes</h3>
+<p>The library is now released under the GNAT-modified GPL. My test
+and demonstration code is released under the GPL. Contributed
+code's licences remain unchanged.</p>
+<h3>Interface changes</h3>
+<h4>Constraints revisited</h4>
+<p>For Bags, Maps and Sets in each form, and in all Bounded forms,
+the basic container is now unconstrained with a constrained
+subtype: for Unbounded Bags, for instance, the declarations are</p>
+<pre>
+   generic
+      with function Hash (V : Item) return Natural is &lt;&gt;;
+      Buckets : Positive;
+      Storage : in out System.Storage_Pools.Root_Storage_Pool'Class;
+   package BC.Containers.Bags.Unbounded is
+      ...
+      type Unconstrained_Bag
+        (Number_Of_Buckets : Positive) is new Abstract_Bag with private;
+
+      subtype Bag is Unconstrained_Bag (Number_Of_Buckets =&gt; Buckets);
+</pre>
+<p>whereas for bounded bags the declarations are</p>
+<pre>
+   generic
+      with function Hash (V : Item) return Natural is &lt;&gt;;
+      Buckets : Positive;
+      Maximum_Size : Positive;
+   package BC.Containers.Bags.Bounded is
+      ...
+      type Unconstrained_Bag
+        (Number_Of_Buckets : Positive;
+         Maximum_Size : Positive) is new Abstract_Bag with private;
+
+      subtype Bag is Unconstrained_Bag (Number_Of_Buckets =&gt; Buckets,
+                                        Maximum_Size =&gt; Maximum_Size);
+</pre>
+<p>The intention is that users shouldn't need to change their
+source.</p>
+<h4>Iterators</h4>
+<ul>
+<li>It used to be possible to create an empty Container, create an
+Iterator over it, populate the Container, and then just use the
+Iterator.<br />
+If you do that now, the Iterator will be "complete" (ie,
+<tt>Is_Done</tt> will typically return <tt>True</tt>) until you
+<tt>Reset</tt> it.<br />
+It's a Bad Idea to use an Iterator after modifying the associated
+Container without resetting it first.</li>
+<li><tt>Delete_Item_At</tt> is now implemented for Bags, Maps and
+Sets.</li>
+</ul>
+<h4>Concurrency</h4>
+<p>The slender support for concurrency (Guarded and Synchronized
+forms) has been removed.</p>
+<p>You may find you need concurrency support when using the
+Components to help implement your own abstractions. You'll probably
+find that the best approach is to implement the required
+concurrency behaviour with tasks, protected types and (if you
+choose) semaphores and locks from
+<tt>BC.Support.Synchronization</tt>, using the Components within
+this environment.</p>
+<h4>Memory streams</h4>
+<p><tt>BC.Support.Memory_Streams</tt> provides in-memory stream
+support.</p>
+<h4>Other</h4>
+<p><tt>BC.Containers.Maps.Hash_Statistics</tt> and
+<tt>BC.Containers.Sets.Hash_Statistics</tt> are withdrawn.</p>
+<p><tt>BC.Container_Error</tt> (raised when sorting unsortable
+container types) becomes <tt>Sort_Error</tt>.</p>
+<p>The support for smart pointers (in <tt>BC.Smart</tt>) is
+deprecated; use <tt>BC.Support.Smart_Pointers</tt> instead.</p>
+<h3>Documentation changes</h3>
+<p>There are some <a href="documentation.html#support">brief notes
+on the <tt>BC.Support</tt> packages</a>.</p>
+<h3>Implementation changes</h3>
+<p>None not already discussed.</p>
+<h3>New contributions</h3>
+<p>None.</p>
+</dd>
+
+<dt>2 Jun 2002</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>None.</p>
+<h3>Documentation changes</h3>
+<p>Noted that the <a href="case-study.html">Case Study</a> is in
+fact meant to be a tutorial!</p>
+<p>Added further recommendation to use Collections instead of
+Lists.</p>
+<h3>Implementation changes</h3>
+<p>Inserted a couple of <tt>pragma Elaborate_Body</tt>s.</p>
+<p>Added tests to suppress warnings when instantiating a bounded
+container of size 1 (I know this sounds silly, it happens with a
+<a href="http://www.pushface.org/coldframe/">code generator</a>
+that's a bit naive still in this area).</p>
+<p>Improved closed Iterator (<tt>Visit</tt>, <tt>Modify</tt>)
+performance.</p>
+<p>Optimisations on <tt>BC.Containers.Trees.AVL.Validate</tt>,
+thanks to <a href="mailto:Steve.Deller@udlp.com">Steve
+Deller</a>.</p>
+<p>Implemented <tt>"="</tt> properly for Bounded and Dynamic Maps.
+Completed implementation of <tt>Maps.Are_Equal</tt>.</p>
+<p>Modifications to <tt>BC.Containers.Maps.Unbounded</tt> to allow
+the new <a href="demos.html"><tt>Configuration_Demo</tt></a> to
+build with GNAT 3.14p (and GCC-3.1). It won't build with 3.13p, by
+the way, and has finalization problems with GNAT 3.15a.</p>
+<h3>New contributions</h3>
+<p><a href="mailto:Anh.Vo@udlp.com">Anh Vo</a> has contributed a
+pair of <a href="contrib/anh-vo">storage managers</a>.</p>
+<h3>Other notes</h3>
+<p>The new storage pool management scheme, introduced in the
+20011011 release, <a href="compiler-problems.html#16mar2002">breaks
+GNAT 3.12</a>.</p>
+<p>Converted the <a href="demos.html">Tests and Demos</a> page to
+report compiler compatibility.</p>
+</dd>
+
+<dt>17 Jan 2002</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>The Containers that don't provide structural sharing (Bags,
+Collections, Dequeues, Maps, Queues, Rings, Sets and Stacks) now
+support Streams (<tt>'Input</tt>, <tt>'Output</tt>).<br />
+Unfortunately, GNAT 3.13p doesn't support this for dynamic or
+unbounded forms (runtime errors), while ObjectAda fails at runtime
+when the <tt>Item</tt> type is a discriminated record (OK for
+tagged types, though). Walking on broken glass here.</p>
+<h3>Documentation changes</h3>
+<p>Corrected an error in the annotation of
+<tt>BC.Graphs.Destroy_Arc</tt>.</p>
+<p>Added usage of maps to the case study.</p>
+<h3>Implementation changes</h3>
+<p>Removed <tt>BC.Support.Nodes</tt> (spreading its functionality
+to the using packages).</p>
+<p>Removed unused <tt>First</tt>, <tt>Last</tt> variants in
+<tt>BC.Support.{Bounded,Dynamic,Unbounded}</tt>.</p>
+<p>Dynamic Components didn't support "=" properly (predefined
+equality used for array comparison, LRM 4.5.2(24)).</p>
+<h3>New contributions</h3>
+<p><a href="mailto:progers@classwide.com">Pat Rogers</a> has added
+a <a href="contrib/rogers/">storage manager</a> for real-time
+applications.</p>
+<h3>Other notes</h3>
+<p>ObjectAda, AdaMulti and Apex have <a href=
+"compiler-problems.html#31nov2001a">a problem</a> with
+<tt>BC.Copy</tt>, <tt>BC.Filter</tt>.</p>
+<p>ObjectAda has <a href=
+"compiler-problems.html#31nov2001b">trouble</a> with
+<tt>sort_test.adb</tt>.</p>
+<p>ObjectAda has <a href=
+"compiler-problems.html#31jan2002">trouble</a> with
+<tt>user_map.adb</tt>.</p>
+<p>I removed the Mind-It facility, they've decided to <a href=
+"http://www.pumatech.com/mind-it_service/service.html">charge for
+the service</a>.</p>
+</dd>
+
+<dt>11 Oct 2001</dt>
+<dd>
+<h3>Interface changes</h3>
+<p><font color="red">The way Storage Management is specified has
+changed significantly</font>: you now supply a single generic
+parameter of type
+<tt>System.Storage_Pools.Root_Storage_Pool'Class</tt>.<br />
+This will be painful to start with, but should simplify matters in
+the long run.</p>
+<p>The version of <tt>Sets.Add</tt> that doesn't tell you if the
+newly added Item was in fact already there becomes a primitive
+operation rather than a class-wide one.</p>
+<p><tt>BC.Containers.Maps.Hash_Statistics</tt> didn't work for
+Bounded Maps.</p>
+<p>You couldn't override equality for a <tt>Map</tt>'s
+<tt>Key</tt>.</p>
+<h3>Documentation changes</h3>
+<p>Added commentary to <tt>BC.Copy</tt>, <tt>BC.Filter</tt>.</p>
+<h3>Implementation changes</h3>
+<p>Continued indenting to the GNAT defaults.</p>
+<p>Began rework of tests so as to give a clear pass/fail
+indication. So far only for Collections, Maps, Sets.</p>
+</dd>
+
+<dt>19 Aug 2001</dt>
+<dd>
+<h3>Documentation changes</h3>
+<p>Began work on a <a href="case-study.html">case study</a>.</p>
+<h3>Implementation changes</h3>
+<p>Added a <tt>with abort</tt> to a <tt>requeue</tt> in
+<tt>BC.Support.Synchronization</tt>.</p>
+<p>Bounded Bags, Maps and Sets use a bounded hash table. This
+reduces the space requirement considerably and means that the
+<tt>Available</tt> function returns the correct value.</p>
+<p>Began re-indenting to the GNAT default (basically, 3 spaces
+standard indent, 2 spaces for continuations).</p>
+</dd>
+
+<dt>13 May 2001</dt>
+<dd>
+<h3>Interface changes</h3>
+<p>Added <tt>BC.Containers.Quicksort</tt>,
+<tt>BC.Containers.Shellsort</tt> generics (implemented as child
+packages, on the theory that you won't want the clutter in
+<tt>BC.Containers</tt> if you don't need it).</p>
+<p>Removed <tt>BC.Containers.Copy</tt>,
+<tt>BC.Containers.Filter</tt> generics.</p>
+<p>Bounded forms have an <tt>Available</tt> function, returning the
+number of free entries. The same function is now available for
+Dynamic and Unbounded forms (in which case it returns
+<tt>Natural'Last</tt>; just don't believe it!</p>
+<p>Added Synchronized forms for Dynamic and Unbounded Maps.</p>
+<p>Added <tt>BC.Containers.Maps.Hash_Statistics</tt> to report how
+well the hashing algorithm is doing. Easy enough to do the same for
+Bags, Sets ..</p>
+<h3>Implementation changes</h3>
+<p>Added noisy exception handlers to all the test programs ..</p>
+<p>.. because an assertion in the Bounded Container support package
+was off by one, and the test programs were putting GNAT's exception
+message in a log file that was a relic of the old malloc
+checking.</p>
+<p>Unbounded Maps missed out on the 20010325 change in which
+Containers no longer allocated their representation from the heap;
+fixed.</p>
+<p>Synchronized Maps didn't allow you to override <tt>"="</tt>.</p>
+<p>The GNAT <a href="compiler-problems.html#29may1999">compiler
+problem</a> (GNAT was too permissive) noted in the June 1999
+release is still there .. fixed, I hope, in
+<tt>BC.Support.Synchronization</tt>.<br />
+I think the reason I've not seen this problem is that I've never
+been able to get the concurrency support working with the free
+versions of the Aonix compiler. The least I can do is to try
+compiling synchronization support on its own! .. and OA 7.2 would
+have found it. Apologies.</p>
+</dd>
+
+<dt>25 March 2001</dt>
+<dd>
+<p>Containers no longer allocate their representation from the
+heap. This particularly affects Bounded forms, which no longer use
+the heap at all (at any rate in non-Guarded, non-Synchronized
+forms).</p>
+<p>Bounded forms now use a strategy derived from that in the C++
+Components to minimise the amount of data copying on insertion and
+removal.</p>
+<p>Lists no longer allow the use of <tt>Remove</tt> to delete an
+element that is aliased by another List (the new exception
+<tt>BC.Referenced</tt> will be raised).<br />
+I hope this won't upset too many of you, but if you were using this
+feature you were living dangerously! miscalculated reference
+counts, dangling pointers, ... the simplest thing to do is to
+<tt>Clear</tt> the second List.</p>
+<p>For consistency, what were the Bounded forms' <tt>Size</tt>
+parameters are now all <tt>Maximum_Size</tt>.</p>
+<p>For consistency, the Dynamic forms' <tt>Create</tt> operation
+has been replaced by a new generic parameter
+<tt>Initial_Size</tt>.</p>
+<p>Added generic <tt>Copy</tt>, <tt>Filter</tt> functions to
+<tt>BC</tt>; this allows you to copy or filter between different
+instantiations of <tt>BC.Containers</tt> (for the same Item type,
+of course).<br />
+I think these remove the need for <tt>BC.Containers.Copy</tt>,
+<tt>BC.Containers.Filter</tt>.</p>
+<p>If <tt>AVL_Tree.Insert</tt> finds that there is already an
+element which compares equal to the given element, it now replaces
+the existing element. This is in case you have important non-key
+record components that you wish to change.<br />
+An alternative strategy in this situation is to make the actual
+item type a pointer to your record, so that you can change the
+indicated non-key fields as required (<em>not</em> the key fields,
+please!)</p>
+</dd>
+
+<dt>21 Jan 2001</dt>
+<dd>
+<h3>Interface changes</h3>
+For Containers with Bounded, Dynamic and Unbounded forms the
+concrete types no longer include the form name; thus,
+<tt>BC.Containers.Maps</tt> declares <tt>Abstract_Map</tt>, while
+<tt>BC.Containers.Maps.Unbounded</tt> declares <tt>Map</tt>.
+<p>The concrete Lists are now declared as plain <tt>List</tt>
+rather than <tt>Single_List</tt>, <tt>Double_List</tt> (there is no
+<tt>Abstract_List</tt>, perhaps there should be!).</p>
+<p>The concrete Graphs, Vertices and Arcs are now declared as plain
+<tt>Graph</tt>, <tt>Vertex</tt> and <tt>Arc</tt> (and the abstract
+types in <tt>BC.Graphs</tt> are <tt>Abstract_Graph</tt>,
+<tt>Abstract_Vertex</tt>, and <tt>Abstract_Arc</tt>).</p>
+<p>Maps now have the standard Container generic type <tt>Item</tt>
+as the range, and the Map generic type <tt>Key</tt> as the domain.
+If you are a Map user, you'll have to change your code's logic (as
+well as the type names, see above).</p>
+<p>Added generic <tt>Copy</tt>, <tt>Filter</tt> functions to
+<tt>BC.Containers</tt>.</p>
+<h3>Implementation changes</h3>
+<p>Hash functions (for Bags, Maps, Sets) now expected to return
+<tt>Natural</tt> rather than <tt>Positive</tt>.</p>
+<p>The Map comments used to claim that Maps cache references. This
+was not true.</p>
+<p>Removed Dynamic Queues' Create(Size) operation (now a generic
+parameter); for use with synchronized Queues. The problem is that
+this was a function, so derived types would have had to override
+it.<br />
+This change will have to apply to other Dynamic forms.</p>
+<p>Added a Pop_Value operation for Queues; semantically necessary
+for synchronized Queues.</p>
+<p>Removed the unnecessary (illegal?) Initialize(Ring_Iterator)
+operation.</p>
+<p>Iterators are visibly Controlled. The Controlled bit is because
+of work on synchronized forms, and the visible bit is because of a
+GNAT 3.13 problem with finalization when using a function return
+value to initialize a classwide value.</p>
+<p>Lots of work on <tt>BC.Support.Synchronization</tt>.</p>
+</dd>
+
+<dt>30 Sep 2000</dt>
+<dd>
+<p>Implemented the remaining Bounded and Dynamic forms
+(Collections, Deques, Ordered Collections, Ordered Queues, Queues
+and Rings).</p>
+<p>Added a <tt>Null_Container</tt> operation, so users can
+initialize structures containing Containers.</p>
+<p>Began an alternative approach to the provision of Guarded and
+Synchronized forms. You can see this in
+<tt>BC.Containers.Guarded</tt>,
+<tt>BC.Containers.Maps.Synchronized</tt> and
+<tt>Map_Test_Concurrent</tt>. Unfortunately there seems to be
+<a href="compiler-problems.html#13aug2000">a disagreement between
+compilers</a> about this one!</p>
+<p>Fixed an error in passive modifying iteration, where the first
+element was visited repeatedly. This has changed
+<tt>BC.Containers.Access_Current_Item</tt>'s profile.</p>
+</dd>
+
+<dt>4 Jun 2000</dt>
+<dd>
+<p>Added Deques (in the Unbounded form only so far).</p>
+<p>In AVL Trees and Lists, removed the <tt>aliased</tt>
+specification on elements, which forces the element to be
+constrained even if the discriminant has a default.</p>
+<p>In response to a report from <a href=
+"mailto:dennsion@ssd.fsi.com">T&nbsp;E&nbsp;Dennison</a>, speeded
+up the creation of Iterators. Note, this requires that iterators be
+declared of type <tt>Containers.Interator'Class</tt>, and
+initialized at the point of declaration.</p>
+<p>Copying of Ordered Collections using <tt>Collections.Copy</tt>
+is now stable.</p>
+<p>Removed unnecessary private operations on some Containers.</p>
+<p>Synchronized Unbounded Maps had no <tt>"="</tt> operation.</p>
+<p>The added Map iterator features (which allow access to the
+<tt>Value</tt>) have been reworked in the same style as the
+standard Container iterators. They are only available when the
+<tt>Iterator</tt> concerned is viewed as a
+<tt>Map_Iterator</tt>.</p>
+<p>Smart Pointers now have a <tt>Null_Pointer</tt> declaration.</p>
+<p>Bounded forms didn't properly implement equality (thanks to
+<a href="mailto:wymbdd@hotmail.com">Mark Bond</a> for this
+one).</p>
+<p>Hash tables now compile with APEX as well as GNAT and ObjectAda
+7.1.</p>
+<p>Reorganised the source files so that tests and demos go in
+subdirectories.</p>
+</dd>
+
+<dt>19 Feb 2000</dt>
+<dd>
+<p>Uses signature-based Hash Tables (for Bags, Maps, Sets).</p>
+<p>Includes Guarded and Synchronized Maps.</p>
+</dd>
+
+<dt>3 Jan 2000</dt>
+<dd>
+<p>Added the ability to delete the item an <tt>Iterator</tt> is
+currently indicating
+(<tt>Delete_Item_At&nbsp;(It&nbsp;:&nbsp;Iterator)</tt>). Note,
+this feature doesn't yet work for Bags, Maps, Rings or Sets.</p>
+<p>The C++ code offers two variants of accessors such as
+<tt>Queues.Front</tt>, one of which returns a value while the other
+returns a reference. The second case is now supported by generics
+such as eg <tt>Queues.Process_Front</tt>.</p>
+<p>The <tt>Copy</tt> operation of Collections, Queues, Rings and
+Stacks checks for self-assignment before proceeding.</p>
+<p>Synchronized Unbounded Rings now support blocking (balking); eg,
+an attempt to <tt>Pop</tt> will block until the Ring has something
+in it to pop. For related reasons, the <tt>Pop_Value</tt> operation
+is provided.</p>
+<p>AVL Trees had an error (inherited from the C++) which would
+sometimes corrupt the Tree on deletion.</p>
+<p>Containers have new versions of the <tt>Visit</tt> and
+<tt>Modify</tt> generics that include a parameter as an argument to
+<tt>Visit</tt> and <tt>Modify</tt> that is passed to the
+<tt>Apply</tt> routine. Thanks to <a href=
+"mailto:SteveD@WOODLAND.USNR.com">Steve Doiel</a>.</p>
+<p>Added <tt>pragma Elaborate_Body</tt> throughout.</p>
+<p>Continued the renaming of <tt>Container</tt> parameters from
+<tt>Obj</tt> to something slightly more mnemonic.</p>
+</dd>
+
+<dt>31 Oct 1999</dt>
+<dd>
+<p>Added Unbounded Ordered Queues.</p>
+<p>AVL Trees are no longer limited.</p>
+<p>Corrected ordering problem with Unbounded Ordered Collections
+when keys are equal. <tt>Insert</tt> now adds from the front of the
+Collection, <tt>Append</tt> from the rear.</p>
+</dd>
+
+<dt>21 Jun 1999</dt>
+<dd>
+<p>Added Unbounded Collections and Unbounded Ordered
+Collections.</p>
+<p><tt>BC.Support.Bounded</tt>, <tt>BC.Support.Unbounded</tt>
+subprogram specs were confused about whether indexing was from 0
+(as in the C++) or 1 (in the Ada).
+<tt>BC.Support.Unbounded.Append(2)</tt> had an error when appending
+after the first element.</p>
+<p>Corrected a GNAT <a href=
+"compiler-problems.html#29may1999">compiler problem</a> (GNAT was
+too permissive).</p>
+<p>Added ObjectAda-special versions of the Bag test driver
+(avoiding <a href="compiler-problems.html#29jan1999">compiler
+problems</a>).</p>
+</dd>
+
+<dt>7 May 1999</dt>
+<dd>Included the accidentally-omitted Bounded and Dynamic Bag
+sources.</dd>
+
+<dt>4 May 1999</dt>
+<dd>Added Bounded and Dynamic Bags.
+<p>Added Unbounded Rings in standard, Guarded and Synchronized
+forms.</p>
+<p>ObjectAda <a href="compiler-problems.html#4may1999">problems</a>
+with Semaphores.</p>
+</dd>
+
+<dt>14 Mar 1999</dt>
+<dd>Eliminated a problem where a function call, used only for its
+side effect and not for its result, was deleted by high
+optimisation levels (<tt>-O3</tt>).
+<p>Passive iteration (in <tt>BC.Containers</tt>) didn't reset the
+passed-in <tt>Iterator</tt>.</p>
+<p><a href="compiler-problems.html#13mar1999">Notes</a> from
+<a href="mailto:woodruff1@llnl.gov">John P. Woodruff</a> on use
+with Rational Apex.</p>
+<p>Added a word-counter demo, as suggested by <a href=
+"mailto:J.English@bton.ac.uk">John English</a> in the <a href=
+"http://www.suffix.com/Ada/SCL/">Ada Standard Component Library
+Working Group</a>.</p>
+<p>Further <a href="contrib/">contributions</a>.</p>
+</dd>
+
+<dt>21 Feb 1999</dt>
+<dd>Containers require a (defaultable) <tt>"="</tt> operation for
+Items.
+<p>Added Bags (only in the Unbounded form so far).</p>
+<p>Added Sets.</p>
+<p>Reworked Iteration; passive iteration now obtains the Container
+over which to iterate via an Iterator bound to the container. This
+allows different styles of iteration with one interface.</p>
+<p>Graphs have three Vertex iterators: incoming only, outgoing
+only, both ways.</p>
+<p>Binary trees have in-order, pre-order and post-order iterators;
+Multiway trees have pre-order and post-order iterators. Only
+passive iteration is available, and the style is different from
+that of other Containers.</p>
+<p>If a section of a list which didn't contain a shared node was
+purged, an invalid pointer access (Constraint_Error) would occur.
+This error was in the C++ (where it was OK, it seems, to
+<tt>free()</tt> a null pointer).</p>
+<p>Assignment involving unbounded forms didn't correctly invalidate
+the cache in the copy.</p>
+<p>Began a <a href="demos.html">demos</a> page.</p>
+<p>Began a <a href="contrib/">"contributions"</a> section, with
+initial contributions from <a href=
+"mailto:Daniel.Gaudry@wanadoo.fr">Daniel Gaudry</a>.</p>
+</dd>
+
+<dt>29 Jan 1999</dt>
+<dd>Corrected an error in AVL trees (only the second one that is an
+error in the original C++ and not in the translation!).
+<p>Added ObjectAda-special versions of test drivers (avoiding
+<a href="compiler-problems.html#29jan1999">compiler
+problems</a>).</p>
+<p>Removed a use of the GNAT-special <tt>'Img</tt> attribute.</p>
+<p>Removed a couple of badly-placed <tt>pragma Inline</tt>s.</p>
+</dd>
+
+<dt>24 Jan 1999</dt>
+<dd>Added Maps.
+<p>Added AVL Trees.</p>
+<p>Removed some abbreviations; for instance, in
+<tt>BC.Containers.Stacks.Unbounded</tt>, the type
+<tt>Unb_Stack</tt> becomes <tt>Unbounded_Stack</tt>.
+<em><font color="red">These changes will break existing
+code.</font></em></p>
+<p>Reworked Iteration throughout, with a <em><font color=
+"green">vast improvement in the efficiency of List
+iterators</font></em>. <em><font color="red">These changes will
+break existing code</font></em>; <a href=
+"compiler-problems.html#23jan1999">compiler problems</a> mean that
+<em><font color="red">you can't use GNAT 3.10p</font></em>.</p>
+<p>Moved Graph iterators up to the parent package
+(<tt>BC.Graphs</tt>), and included a little demonstration of Graph
+usage (<tt>Ada_Units</tt>).</p>
+<p>For consistency, the concrete Graph, Vertex and Arc types are
+now prefixed with <tt>Undirected_</tt> or <tt>Directed_</tt> as
+appropriate; eg, a directed Vertex becomes
+<tt>Directed_Vertex</tt>.</p>
+</dd>
+
+<dt>20 Oct 1998</dt>
+<dd>Added Graphs. There are more <a href=
+"compiler-problems.html#20oct1998">compiler problems</a>, I'm
+afraid, though we have found a workround for one of the old ones.
+<p>Internal changes in Storage Management.</p>
+</dd>
+
+<dt>6 Oct 1998</dt>
+<dd>Updated notes on <a href=
+"compiler-problems.html#6oct1998">compiler problems</a> to give a
+workround for users of ObjectAda 7.1 Special Edition.</dd>
+
+<dt>4 Oct 1998</dt>
+<dd>Storage Management added, thanks to <a href=
+"mailto:pat@classwide.com">Pat Rogers</a>. This has tickled some
+<em><font color="red">compiler problems</font></em>, <a href=
+"compiler-problems.html#6oct1998">please check to see if you're
+affected</a>.
+<p>Fixed inefficiency in Unbounded (and perhaps Dynamic) forms of
+Queues and Stacks.</p>
+<p>Storage Management for Dynamic and Unbounded forms required that
+we instantiate some support packages inside the using generic
+rather than having the user pre-instantiate them. We decided to
+adopt the same policy for Bounded forms too. <em><font color=
+"red">These changes will break existing code.</font></em></p>
+<p>Added some comments to package specs.</p>
+<p>Added some minor demo code (<tt>storage</tt>,
+<tt>time_lists</tt> and <tt>time_queues</tt>).</p>
+</dd>
+
+<dt>24 Aug 1998</dt>
+<dd>Bugfix release.
+<p>There were several storage leaks.</p>
+<p>It's illegal to declare abstract subprograms in a private
+part.</p>
+<p>The Stack and Queue iterators were broken (by sjw).</p>
+</dd>
+
+<dt>1 Aug 1998</dt>
+<dd>First release by <a href=
+"mailto:simon@pushface.org">Simon Wright</a>. Added Binary
+and Multiway Trees, Smart Pointers.</dd>
+</dl>
+<p><img src="greenline.gif" alt="--" width="100%" height="4" /></p>
+<p><a href="index.html">[index]</a></p>
+<p><i><script type="text/javascript">
+//<![CDATA[
+document.write("Last update: ");
+document.write(document.lastModified);
+//]]>
+</script></i></p>
+</body>
+</html>

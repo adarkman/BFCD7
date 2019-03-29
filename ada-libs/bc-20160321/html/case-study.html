@@ -1,0 +1,472 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<meta name="generator" content=
+"HTML Tidy for Mac OS X (vers 1st December 2004), see www.w3.org">
+<title>The Ada95 Booch Components (Case Study)</title>
+<link href="bc.css" rel="stylesheet" type="text/css"/>
+</head>
+<body bgcolor="#FFFFFF">
+<table width="100%">
+<tr>
+<td><img src="ada95lgo.gif" alt=
+"The (free) Ada95 Booch Components"></td>
+<td align="right"><a href="http://sourceforge.net/projects/booch95"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=135616&type=16"
+width="150" height="40" border="0" alt="Get Ada 95 Booch Components at
+SourceForge.net. Fast, secure and Free Open Source software downloads"
+/></a></td>
+</tr>
+</table>
+<i>Case Study</i>
+<p>The Booch Components are a complex whole, and the purpose of
+this note is to provide an initial introduction to their use.</p>
+<p><img src="greenline.gif" alt="--" width="100%" height="4"></p>
+<ul>
+<li><a href="#example">The example</a></li>
+<li><a href="#which-components">Which components to use?</a></li>
+<li><a href="#instantiation">How do I instantiate them?</a></li>
+<li><a href="#what-to-do">What can I do with them?</a></li>
+<li><a href="#other-components">What other Components might be
+useful?</a></li>
+<li><a href="#forms">What are these "Forms"?</a></li>
+</ul>
+<p><img src="greenline.gif" alt="--" width="100%" height="4"></p>
+<h2><a name="example" id="example">The example</a></h2>
+<img src="car-fleet.jpg" alt="Car belongs to Fleet">
+<p>In the example, a Car has three attributes, the Plate (the Index
+Mark; my first car's was <tt>8493KC</tt>), the Model name (it was a
+Vauxhall Cresta) and the date it was Registered (some time in the
+mists of antiquity).</p>
+<pre>
+   with Ada.Calendar;
+   with Ada.Strings.Bounded;
+   package Cars is
+
+      package Plate_Strings
+      is new Ada.Strings.Bounded.Generic_Bounded_Length (10);
+      subtype Plate_String
+      is Plate_Strings.Bounded_String;
+
+      package Model_Strings
+      is new Ada.Strings.Bounded.Generic_Bounded_Length (32);
+      subtype Model_String
+      is Model_Strings.Bounded_String;
+
+      type Car is record
+         Plate : Plate_String;
+         Model : Model_String;
+         Registered : Ada.Calendar.Time;
+      end record;
+
+   end Cars;
+</pre>
+<p>A company's Fleet holds a number of Cars.</p>
+<h2><a name="which-components" id="which-components">Which
+components to use?</a></h2>
+<p>You're clearly going to need some sort of container to implement
+Fleet.</p>
+<p>If you just want a standard container to support iteration,
+filtering and sorting, use Collections. <b>The List components are
+much more complex than you'll need.</b></p>
+<p><a href="#maps">Later</a>, we'll look at Maps.</p>
+<h2><a name="instantiation" id="instantiation">How do I instantiate
+them?</a></h2>
+<h3><a name="separate-instantiation" id=
+"separate-instantiation">Separate instantiation</a></h3>
+<p>The first thing to do is to instantiate the top-level abstract
+Containers for Car. Note, you have to supply an equality operator
+(<tt>"="</tt>) for <tt>Car</tt>; you could also just <tt>use
+Cars</tt>.</p>
+<pre>
+   with BC.Containers;
+   with Cars;
+   package Abstract_Car_Containers
+   is new BC.Containers (Cars.Car, "=" =&gt; Cars."=");
+</pre>
+<p>Next, using the new Abstract_Car_Containers, instantiate the
+abstract Collections. This is quite confusing the first few times
+you come across it!</p>
+
+<p>When you instantiate a generic parent like <tt>BC.Containers</tt>, all the generic children of the generic parent become candidates for instantiation as actual children of the actual parent.</p>
+
+<p>Although you have to <tt>with BC.Containers.Collections;</tt>, the
+thing you have to instantiate now is the <em>newly
+magicked</em> <tt>Abstract_Car_Containers.Collections</tt>:</p>
+
+<pre>
+   with Abstract_Car_Containers;
+   with BC.Containers.Collections;
+   package Abstract_Car_Collections
+   is new Abstract_Car_Containers.Collections;
+</pre>
+<p>Next, choose the representation to be used for concrete
+Collections. To start with, assume that you'll never have more than 30
+Cars to deal with. This means that you can use the
+<i>Bounded</i> form. Again, what you instantiate is the child of
+the newly instantiated <tt>Abstract_Car_Collections</tt>.</p>
+<pre>
+   with Abstract_Car_Collections;
+   with BC.Containers.Collections.Bounded;
+   package Fleets
+   is new Abstract_Car_Collections.Bounded (Maximum_Size =&gt; 30);
+</pre>
+You now need to create your Fleet:
+<pre>
+   with Fleets;
+   package My_Fleet is
+
+      The_Fleet : Fleets.Collection;
+
+   end My_Fleet;
+</pre>
+<h3>Grouped instantiation</h3>
+<p>You might find it more convenient to do the instantiations in
+one place. Note the <tt>use type Cars.Car;</tt> to make
+<tt>Car</tt> equality visible:</p>
+<pre>
+   with BC.Containers.Collections.Bounded;
+   with Cars;
+   package <a name="fleet-combined" id=
+"fleet-combined">My_Fleet_Combined</a> is
+
+      use type Cars.Car;
+
+      package Abstract_Car_Containers
+      is new BC.Containers (Cars.Car);
+
+      package Abstract_Car_Collections
+      is new Abstract_Car_Containers.Collections;
+
+      package Fleets
+      is new Abstract_Car_Collections.Bounded (Maximum_Size =&gt; 30);
+
+      The_Fleet : Fleets.Collection;
+
+   end My_Fleet_Combined;
+</pre>
+<p>or even to make the use of the Components private:</p>
+<pre>
+   with BC.Containers.Collections.Bounded;
+   with Cars;
+   package <a name="fleet-hidden" id=
+"fleet-hidden">My_Fleet_Hidden</a> is
+
+      --  subprograms to add, find, and delete Cars
+
+   private
+
+      package Abstract_Car_Containers
+      is new BC.Containers (Cars.Car, "=" =&gt; Cars."=");
+
+      package Abstract_Car_Collections
+      is new Abstract_Car_Containers.Collections;
+
+      package Fleets
+      is new Abstract_Car_Collections.Bounded (Maximum_Size =&gt; 30);
+
+      The_Fleet : Fleets.Collection;
+
+   end My_Fleet_Hidden;
+</pre>
+<h2><a name="what-to-do" id="what-to-do">What can I do with
+them?</a></h2>
+<p>Aside from keeping things in Collections, there are other
+possibilities:</p>
+<ul>
+<li><a href="#iteration">iteration</a>,</li>
+<li><a href="#selection">selection</a>, and</li>
+<li><a href="#sorting">sorting</a>.</li>
+</ul>
+<h3><a name="iteration" id="iteration">Iteration</a></h3>
+<p>Iteration is the process of visiting each member of a collection
+and doing something with or to it.</p>
+<p>Two forms of iteration are supported: open and closed. Both
+require the creation of Iterators.</p>
+<p>With open iterators, you explicitly advance the iterator to the
+next element in the collection it references, until it's done; with
+closed iterators, you supply a procedure which gets called for each
+element in the collection.</p>
+<p>Considering the packages declared in the discussion on <a href=
+"#separate-instantiation">separate instantiation</a> above, the
+operations on iterators are all defined in
+<tt>Abstract_Car_Containers</tt>, while actual iterators can only
+be created by the concrete package:</p>
+<pre>
+   declare
+
+      It : Abstract_Car_Containers.Iterator'Class
+        := Fleets.New_Iterator (The_Fleet);
+
+   begin
+
+      while not Abstract_Car_Containers.Is_Done (It) loop
+
+         declare
+            C : Car := Abstract_Car_Containers.Current_Item (It);
+         begin
+            null;  --  do something with C
+         end;
+
+         Abstract_Car_Containers.Next (It);
+
+      end loop;
+
+   end;
+</pre>
+<p>A closed-iterator version of the same would look like</p>
+<pre>
+   declare
+
+      procedure Process_Car (C : Car; OK : out Boolean);
+
+      procedure Process_Fleet
+        is new Abstract_Car_Containers.Visit (Process_Car);
+
+      procedure Process_Car (C : Car; OK : out Boolean) is
+      begin
+
+         OK := True;  --  unless you want the iteration to stop early
+
+         --  do something with C
+
+      end Process_Car;
+
+      It : Abstract_Car_Containers.Iterator'Class
+        := Fleets.New_Iterator (The_Fleet);
+
+   begin
+
+      Process_Fleet (It);
+
+   end;
+</pre>
+<p>This example uses the generic <tt>Visit</tt>, which takes the
+element to be processed as an <tt>in</tt> parameter. As well as
+this, there's the generic <tt>Modify</tt>, which takes the element
+as an <tt>in out</tt> parameter.</p>
+<p>Both <tt>Visit</tt> and <tt>Modify</tt> come in three
+flavours:</p>
+<ul>
+<li>plain</li>
+<li>with an additional <tt>in</tt> parameter</li>
+<li>with an additional <tt>in out</tt> parameter.</li>
+</ul>
+<p>See <tt>BC.Containers</tt> for details.</p>
+<h3><a name="selection" id="selection">Selection</a></h3>
+<p>Suppose you want to find all the Cars in our Fleet that were
+registered before some date. You could imagine a function
+<tt>Registered_Before</tt>:</p>
+<pre>
+   function Registered_Before
+     (Date : Ada.Calendar.Time) return Fleets.Collection;
+</pre>
+<p>which you'd probably declare in the public part of <a href=
+"#fleet-combined"><tt>My_Fleet_Combined</tt></a>. Its body might
+look like</p>
+<pre>
+   function Registered_Before
+     (Date : Ada.Calendar.Time) return Fleets.Collection is
+
+      function Wanted (C : Car) return Boolean;
+
+      procedure Choose is new BC.Filter
+        (Item =&gt; Car,
+         Source =&gt; Abstract_Car_Containers,
+         From =&gt; Fleets.Collection,
+         Target =&gt; Abstract_Car_Containers,
+         To =&gt; Fleets.Collection,
+         Pass =&gt; Wanted,
+         Clear =&gt; Fleets.Clear,
+         Add =&gt; Fleets.Append);
+
+      function Wanted (C : Car) return Boolean is
+         use type Ada.Calendar.Time;
+      begin
+         return C.Registered &lt; Date;
+      end Wanted;
+
+      Result : Fleets.Collection;
+
+   begin
+      Choose (The_Fleet, Result);
+      return Result;
+   end Registered_Before;
+</pre>
+<p>which is a bit of a mouthful.</p>
+<p>The tricky bit is the instantiation of <tt>BC.Filter</tt>
+(which, of course, you have to <tt>with</tt>):</p>
+<blockquote>
+<dl>
+<dt><tt>Item</tt></dt>
+<dd>is the thing you're filtering (<tt>Car</tt>),</dd>
+<dt><tt>Source</tt></dt>
+<dd>is an instantion of <tt>BC.Containers</tt> with
+<tt>Item</tt>s,</dd>
+<dt><tt>From</tt></dt>
+<dd>is the concrete Container type which contains the
+<tt>Item</tt>s to be filtered; it has to have beeen derived from
+the abstract <tt>Container</tt> in <tt>Source</tt>,</dd>
+<dt><tt>Target</tt></dt>
+<dd>is a (possibly different) instantion of <tt>BC.Containers</tt>
+with <tt>Item</tt>s,</dd>
+<dt><tt>To</tt></dt>
+<dd>is the concrete Container type which is to receive the
+<tt>Item</tt>s when they have been filtered; it has to have been
+derived from the abstract <tt>Container</tt> in <tt>Target</tt>,
+and may or may not be the same as <tt>From</tt>,</dd>
+<dt><tt>Pass</tt></dt>
+<dd>is a function which takes an <tt>Item</tt> and returns
+<tt>True</tt> if it's to be kept. In this case, this is
+<tt>Wanted</tt>,</dd>
+<dt><tt>Clear</tt></dt>
+<dd>is a procedure which empties a <tt>To</tt> Container,</dd>
+<dt><tt>Add</tt></dt>
+<dd>is a procedure which adds an <tt>Item</tt> to a <tt>To</tt>
+Container.</dd>
+</dl>
+</blockquote>
+<h3><a name="sorting" id="sorting">Sorting</a></h3>
+<p>Suppose you want to keep your Fleet sorted (earliest first). You
+need</p>
+<pre>
+   procedure Sort;
+</pre>
+<p>which, as before, gets declared in the public part of <a href=
+"#fleet-combined"><tt>My_Fleet_Combined</tt></a>.</p>
+<pre>
+   procedure Sort is
+
+      function Earlier (L, R : Car) return Boolean;
+
+      procedure Sort is new Abstract_Car_Containers.Quicksort
+        ("&lt;" =&gt; Earlier,
+         Container =&gt; Fleets.Collection,
+         Length =&gt; Fleets.Length);
+
+      function Earlier (L, R : Car) return Boolean is
+         use type Ada.Calendar.Time;
+      begin
+         return L.Registered &lt; R.Registered;
+      end Earlier;
+
+   begin
+      Sort (The_Fleet);
+   end Sort;
+</pre>
+<p>As before, you <tt>with BC.Containers.Quicksort;</tt>, but when
+you do the instantiation it's of
+<tt>Abstract_Car_Containers.Quicksort</tt>.</p>
+<p>As an alternative to Quicksort you can use
+<tt>BC.Containers.Shellsort</tt>; the quicksort is (usually)
+quicker but uses recursion, so may take more stack space.</p>
+<h2><a name="other-components" id="other-components">What other
+Components might be useful?</a></h2>
+<h3><a name="maps" id="maps">Maps</a></h3>
+<p>If you had a lot of Cars to deal with, you might want a
+quick-access Container to implement Fleet rather than the
+general-purpose Collection.</p>
+<p>Quick-access? since all Plates are unique (at any one instant,
+anyway. Let's not worry about transferring Plates between Cars!)
+you can treat Plate as a unique <i>Key</i> to allow you to find the
+Car given the Plate. The Booch Container that does this is the
+<i>Map</i>; other container libraries may use other names
+(dictionary, associative array are two).</p>
+<p>Continuing in the style described in the discussion on <a href=
+"#separate-instantiation">separate instantiation</a> above, you
+start by creating an Abstract_Car_Maps package:</p>
+<pre>
+   with Abstract_Car_Containers;
+   with BC.Containers.Maps;
+   with Cars;
+   package Abstract_Car_Maps
+   is new Abstract_Car_Containers.Maps (Key =&gt; Cars.Plate_String,
+                                        "=" =&gt; Cars.Plate_Strings."=");
+</pre>
+<p>(this time you can't get away with just <tt>use Cars</tt>).</p>
+<p>The Map is implemented using a hash table. You say how many
+<i>hash buckets</i> you want, and you supply a <i>hash function</i>
+which, given a Key, indicates which bucket is to be used. The
+buckets correspond to individual Collection-like containers.</p>
+<pre>
+   with Cars;
+   function Plate_Hash (P : Cars.Plate_String) return Natural;
+</pre>
+<pre>
+   with Abstract_Car_Maps;
+   with BC.Containers.Maps.Bounded;
+   with Plate_Hash;
+   package Mapped_Fleets is new Abstract_Car_Maps.Bounded
+     (Hash =&gt; Plate_Hash,
+      Buckets =&gt; 5,
+      Maximum_Size =&gt; 30);
+</pre>
+<p>Why does this speed things up? The reason is that, to search a
+Collection for a particular element, you need to look at half the
+elements on average. If you have a Map with 1000 Cars split among
+10 hash buckets, a search will only have to examine 50 Cars on
+average rather than the 500 you'd need to look at if you used a
+plain Collection.</p>
+<p>For this to work properly you do need a good hash function, of
+course (<tt>Plate_Hash</tt>). It would be quite legal, but not at all
+efficient, for the hash function always to return 0. A set of string
+hash functions (part of the author's <a href=
+"http://coldframe.sourceforge.net/coldframe">ColdFrame</a> package, a
+code framework generator backend for UML CASE tools) is available in
+<a href="coldframe-hash.tgz">tar</a> and <a href=
+"coldframe-hash.zip">zip</a> forms.</p>
+<p>In many applications, you'll probably find the fact that a Map
+implements associative lookup as useful as, if not more so than,
+the performance aspects.</p>
+<p><i>More to come here on Sets and Queues.</i></p>
+<h2><a name="forms" id="forms">What are these "Forms"?</a></h2>
+<p>Most of the Containers come in four <i>concrete forms</i>,
+distinguished by the approach to storage management. The forms
+are</p>
+<ul>
+<li><i>Bounded</i>,</li>
+<li><i>Dynamic</i> (deprecated),</li>
+<li><i>Unbounded</i>, and</li>
+<li><i>Unmanaged</i>.</li>
+</ul>
+<h3>Bounded</h3>
+<p>We've already come across the Bounded form; you can use it if
+you know the maximum number of items you'll need to store.</p>
+<p><i>Note on unconstrainedness.</i></p>
+<p>The bounded form doesn't allocate memory of itself (of course,
+you can use it to hold items that are allocated), so it may be
+appropriate for systems where allocation is frowned upon. However,
+it can be slower, especially for insertion or deletion "in the
+middle".</p>
+<p>There is an issue with deletion of items that need finalizing:
+the finalization will only occur when the item's storage slot is
+overwritten or when the container itself is finalized. Also, if the
+item is an access type, <i>you</i> have to manage deallocation.</p>
+<h3>Dynamic</h3>
+<p>This form was designed before storage pools were properly
+understood. You're probably best off not using it.</p>
+<h3>Unbounded</h3>
+<p>The unbounded form allocates space for each item held from a
+storage pool that you provide and returns it when the item is
+removed.</p>
+<h3>Unmanaged</h3>
+<p>The unmanaged form allocates space for each item held from the
+system memory pool and returns it when the item is removed. It's by
+far the simplest form to use.</p>
+<p>The Mapped_Fleets example above would become</p>
+<pre>
+   with Abstract_Car_Maps;
+   with BC.Containers.Maps.Unmanaged;
+   with Plate_Hash;
+   package Mapped_Fleets is new Abstract_Car_Maps.Unmanaged
+     (Hash =&gt; Plate_Hash,
+      Buckets =&gt; 5);
+</pre>
+<p><i>I guess this should cover Storage Management as well.</i></p>
+<p><img src="greenline.gif" alt="--" width="100%" height="4"></p>
+<p><a href="index.html">[index]</a></p>
+<p><i><script type="text/javascript">
+document.write("Last update: ");
+document.write(document.lastModified);
+</script></i></p>
+</body>
+</html>
