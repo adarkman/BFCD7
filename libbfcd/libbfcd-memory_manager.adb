@@ -19,10 +19,14 @@ package body LibBFCD.Memory_Manager is
 
 	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
 	begin
-		Init (Pool, Code_Size, Data_Size, Code_Word_Size);
+		Pool.r := new Real_Heap;
+		Top_Heap_ID := Top_Heap_ID+1;
+		Pool.r.ID := Top_Heap_ID;
+		Init (Pool.r.all, Code_Size, Data_Size, Code_Word_Size);
+		Pools_Map.Insert(Created_Pools, Pool.r.ID, Pool.r);
 	end Create_Pool;
 
-	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
+	procedure Init (Pool : in out Real_Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive) is
 		use type Mem.Protection_Options;
 	begin
 		Pool.Code_Word_Size := Code_Word_Size;
@@ -72,38 +76,27 @@ package body LibBFCD.Memory_Manager is
 		return m;
 	end Create_MSpace;
 
-	procedure Resize_Pool (Pool : in out Heap; New_Size_Delta : Storage_Count) is
-		m : System.Address;
-	begin
-		m := mremap (Pool.Data, C.size_t(Pool.Real_Data_Size), C.size_t(Pool.Real_Data_Size+New_Size_Delta), 1, To_Address(0));
-		if m = To_Address(-1) then 
-			Put_Line("ERRNO: " & Error_Code'Image(Get_Ada_Error_Code));
-			raise Remap_Failed; 
-		end if;
-		Put_Line("Resize_Pool: " & Integer_Address'Image(To_Integer(m)));
-	end Resize_Pool;
-
 	-- Unsafe version - do not check index range, use only if you know what you do
 	function Get_Code_Word_Address_Unsafe(Pool : in out Heap; Index : in Natural) return System.Address is
 	begin
-		return Pool.Code + Storage_Offset(Pool.Code_Word_Size*(Index-1));
+		return Pool.r.Code + Storage_Offset(Pool.r.Code_Word_Size*(Index-1));
 	end Get_Code_Word_Address_Unsafe;
 
 	function Get_Code_Word_Address(Pool : in out Heap; Index : in Positive) return System.Address is
 		use type System.Address;
 	begin
-		if Index > Pool.Code_Top then raise Code_Range_Error; end if;
+		if Index > Pool.r.Code_Top then raise Code_Range_Error; end if;
 		return Get_Code_Word_Address_Unsafe(Pool, Index);
 	end Get_Code_Word_Address;
 
 	function Allocate_Code_Word_Address(Pool : in out Heap; Index : out Positive) return System.Address is
 	begin
-		Pool.Code_Top := Pool.Code_Top+1;
-		Index := Pool.Code_Top;
-		return Get_Code_Word_Address_Unsafe (Pool, Pool.Code_Top);
+		Pool.r.Code_Top := Pool.r.Code_Top+1;
+		Index := Pool.r.Code_Top;
+		return Get_Code_Word_Address_Unsafe (Pool, Pool.r.Code_Top);
 	end Allocate_Code_Word_Address;
 
-	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.Real_Data_Size);
+	function Storage_Size (Pool : in Heap) return Storage_Count is (Pool.r.Real_Data_Size);
 
 	procedure Allocate (
 		Pool : in out Heap;
@@ -113,11 +106,11 @@ package body LibBFCD.Memory_Manager is
 		free : Storage_Count;
 	begin
 		free := Get_Current_Free_Space (Pool);
-		Address := mspace_malloc (Pool.Data_MSpace, C.size_t(Size));
+		Address := mspace_malloc (Pool.r.Data_MSpace, C.size_t(Size));
 		Put("Alloc: " & Integer_Address'Image(To_Integer(Address)));
 		Put_Line(" " & Storage_Count'Image(Size));
 		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;
-		Memory_Map.Insert(Pool.Allocated, Address, False);
+		Memory_Map.Insert(Pool.r.Allocated, Address, False);
 	end Allocate;
 
 	overriding
@@ -127,12 +120,12 @@ package body LibBFCD.Memory_Manager is
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
 	begin
-		mspace_free (Pool.Data_MSpace, Address);
-		Memory_Map.Delete(Pool.Allocated, Address);
+		mspace_free (Pool.r.Data_MSpace, Address);
+		Memory_Map.Delete(Pool.r.Allocated, Address);
 	end Deallocate;
 
 	function Get_Current_Free_Space(Pool : in Heap) return Storage_Count is
-		m : mallinfo := mspace_mallinfo (Pool.Data_MSpace);
+		m : mallinfo := mspace_mallinfo (Pool.r.Data_MSpace);
 	begin
 		Put_Line ("Free in MSpace: " & C.size_t'Image(m.fordblks));
 		return Storage_Count(m.fordblks);

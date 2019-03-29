@@ -22,7 +22,6 @@ package LibBFCD.Memory_Manager is
 	-- Ада нормально не работает с динамически создаваемыми пулами.
 	-- Это как-то связано с областью видимости, - надо копать RM'12.
 	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
-	procedure Resize_Pool (Pool : in out Heap; New_Size_Delta : Storage_Count);
 
 	overriding
 	procedure Allocate (
@@ -61,7 +60,9 @@ private
 	--
 	-- Main Forth storage pool type - Each VM Thread have pesonal 'Heap' instance
 	--
-	type Heap is new Root_Storage_Pool with record
+	Top_Heap_ID : Natural := 0; -- Global created pools counter;
+	type Real_Heap is record
+		ID : Positive;
 		Real_Code_Size, Real_Data_Size:	Storage_Count;	-- Code_Size, Data_Size - PAGE aligned
 		Page_Size : Storage_Count;			-- Get from system via 'sysconf'
 		--
@@ -77,14 +78,28 @@ private
 		--
 		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
 	end record;
+	-- Да, здесь _Ptr - Real_Heap выделяется только в глобальном пуле.
+	type Real_Heap_Ptr is access Real_Heap;
+
+	type Heap is new Root_Storage_Pool with record
+		r : Real_Heap_Ptr;
+	end record;
 
 	Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
+
+	--
+	-- Map of all created pools - см. Create_Pool
+	--
+	package Pools_Map is new Ada.Containers.Ordered_Maps (
+		Key_Type => Positive,
+		Element_Type => Real_Heap_Ptr);
+	Created_Pools : Pools_Map.Map := Pools_Map.Empty_Map;
 	
 	--
 	-- Internal procedures
 	--
 	-- Initialise newly created Pool
-	procedure Init (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
+	procedure Init (Pool : in out Real_Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
 	-- Create new mspace
 	function Create_MSpace(Base : System.Address; Size : Storage_Count) return mspace;
 
