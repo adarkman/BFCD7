@@ -6,6 +6,10 @@ with System.Storage_Elements;		use System.Storage_Elements;
 with System.Storage_Pools;			use System.Storage_Pools;
 with malloc_2_8_6_h;				use malloc_2_8_6_h; 		-- Doug Lea malloc interface
 with Ada.Containers.Ordered_Maps;
+with BC.Support.Managed_Storage;
+with BC.Containers;
+with BC.Containers.Lists;
+with BC.Containers.Lists.Single;
 
 package LibBFCD.Memory_Manager is
 
@@ -48,6 +52,25 @@ private
 	
 	type Byte is mod 256;
 	NULL_ADDR : constant System.Address := To_Address(0);
+
+	--
+	-- Local, Unmamanged Storage Pool for Booch Components 
+	-- только для внутренних технических целей
+	--
+	subtype Local_Pool is BC.Support.Managed_Storage.Pool;
+	-- Максимальный размер объекта, который может быть выделен в пуле.
+	-- при привышении - Storage Error
+	Maximum_Object_Size : constant Storage_Offset := 10240; 
+	--
+    Local_Storage_Pool : Local_Pool (Maximum_Object_Size); 
+   	Local_Storage : System.Storage_Pools.Root_Storage_Pool'Class
+     	renames System.Storage_Pools.Root_Storage_Pool'Class (Local_Storage_Pool);
+	--
+	-- Тип списка выделенных mspace. (Да, у Booch Components странная система инициализации)
+	--
+	package MSpace_Containers is new BC.Containers (mspace);
+	package MSpace_Lists is new MSpace_Containers.Lists;
+	package Local_MSpace_Lists is new MSpace_Lists.Single (Local_Storage);
 	
 	--
 	-- Allocated memory map
