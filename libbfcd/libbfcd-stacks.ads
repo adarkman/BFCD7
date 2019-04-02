@@ -23,6 +23,8 @@ package LibBFCD.Stacks is
 
 	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : Item_Type);
 	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return Item_Type;
+	function Top (S : Stack) return Item_Type;
+	function Size (S : Stack) return Natural;
 
 private
 	

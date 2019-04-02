@@ -7,7 +7,7 @@ package body LibBFCD.Stacks is
 		pragma Default_Storage_Pool (Pool);
 		e : access Stack_Element := new Stack_Element;
 	begin
-		Put_Line("Stack creation.");
+		Put_Line("Stack creation ^^^.");
 		e.Prev := null;
 		e.Next := null;
 		--e.Item := null;
@@ -48,6 +48,10 @@ package body LibBFCD.Stacks is
 	begin
 		Free(E);
 	end Free_Element;
+
+	function Top (S : Stack) return Item_Type is (S.Top.Item);
+
+	function Size (S : Stack) return Natural is (S.Size);
 
 end LibBFCD.Stacks;
 
