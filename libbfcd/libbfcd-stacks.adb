@@ -8,13 +8,13 @@ package body LibBFCD.Stacks is
 	begin
 		e.Prev := null;
 		e.Next := null;
-		e.Item := null;
+		--e.Item := null;
 		S.Start := e;
 		S.Top := e;
 		S.Size := 0;
 	end Create;
 
-	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : access Item_Type) is
+	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : Item_Type) is
 		pragma Default_Storage_Pool (Pool);
 		e : access Stack_Element := new Stack_Element;
 	begin
@@ -22,11 +22,12 @@ package body LibBFCD.Stacks is
 		e.Item := Item;
 		S.Top.Next := e;
 		S.Top := e;
+		S.Size := S.Size +1;
 	end Push;
 
-	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return access Item_Type is
+	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return Item_Type is
 		pragma Default_Storage_Pool (Pool);
-		Item : access Item_Type;
+		Item : Item_Type;
 		cur_top : access Stack_Element := S.Top;
 	begin
 		if S.Size = 0 then raise Stack_Is_Empty; end if;

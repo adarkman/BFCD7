@@ -111,6 +111,7 @@ package body LibBFCD.Memory_Manager is
 		Put_Line(" " & Storage_Count'Image(Size));
 		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;
 		Memory_Map.Insert(Pool.r.Allocated, Address, False);
+		Global_Allocs := Global_Allocs +1;
 	end Allocate;
 
 	overriding
@@ -120,8 +121,10 @@ package body LibBFCD.Memory_Manager is
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
 	begin
+		Put_Line("Deallocate: " & Integer_Address'Image(To_Integer(Address)) & ", Size: " & Storage_Count'Image(Size));
 		mspace_free (Current_MSpace(Pool), Address);
 		Memory_Map.Delete(Pool.r.Allocated, Address);
+		Global_Deallocs := Global_Deallocs +1;
 	end Deallocate;
 
 	function Get_Current_Free_Space(Pool : in Heap) return Storage_Count is

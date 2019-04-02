@@ -20,6 +20,13 @@ package LibBFCD.Memory_Manager is
 	Code_Range_Error : exception;
 	Remap_Failed : exception;
 
+	--
+	-- Глобальные счётчики. Применяются для тестирования.
+	--
+	Global_Allocs : Natural := 0;
+	Global_Deallocs : Natural := 0;
+	--
+
 	-- Внимание ! 
 	-- Если не хотим странных косяков, то Pool используется только как instance 
 	-- т.е. 'Pool : aliased Heap', никаких 'access' и прочих '...Ptr' - иначе 

@@ -21,13 +21,13 @@ package LibBFCD.Stacks is
 
 	procedure Create(S : in out Stack; Pool : in out Memory_Manager.Heap);
 
-	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : access Item_Type);
-	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return access Item_Type;
+	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : Item_Type);
+	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return Item_Type;
 
 private
 	
 	type Stack_Element is record
-		Item : access Item_Type;
+		Item : Item_Type;
 		Next : access Stack_Element := null;
 		Prev : access Stack_Element := null;
 	end record;
