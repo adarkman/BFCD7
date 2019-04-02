@@ -1,4 +1,5 @@
 with Ada.Unchecked_Deallocation;
+with Ada.Text_IO; use Ada.Text_IO;
 
 package body LibBFCD.Stacks is
 
@@ -6,6 +7,7 @@ package body LibBFCD.Stacks is
 		pragma Default_Storage_Pool (Pool);
 		e : access Stack_Element := new Stack_Element;
 	begin
+		Put_Line("Stack creation.");
 		e.Prev := null;
 		e.Next := null;
 		--e.Item := null;

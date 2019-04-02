@@ -7,7 +7,7 @@ with LibBFCD.Memory_Manager; 	use LibBFCD.Memory_Manager;
 package LibBFCD.Global_Data is
 
 	-- Global Storage Heap;
-	Pool : Heap;
+	--Pool : Heap;
 
 end LibBFCD.Global_Data;
 
