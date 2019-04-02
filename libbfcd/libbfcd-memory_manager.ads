@@ -70,7 +70,8 @@ private
 	--
 	package MSpace_Containers is new BC.Containers (mspace);
 	package MSpace_Lists is new MSpace_Containers.Lists;
-	package Local_MSpace_Lists is new MSpace_Lists.Single (Local_Storage);
+	package Local_MSpaces_List is new MSpace_Lists.Single (Local_Storage);
+	use Local_MSpaces_List;
 	
 	--
 	-- Allocated memory map
@@ -97,7 +98,7 @@ private
 		Data : System.Address;				-- Data pool base address
 		-- Здесь должен быть список MSpace'ов создаваемых
 		-- по мере расширения пула через mremap(2)
-		Data_MSpace : mspace;				-- Data MSpace for Doug Lea malloc
+		Data_MSpaces : Local_MSpaces_List.List := Null_Container;	-- Data MSpace for Doug Lea malloc
 		--
 		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
 	end record;
@@ -109,6 +110,8 @@ private
 	end record;
 
 	Heap_Base : constant System.Address := To_Address(16#90_000_000#); -- WARNING: Must be PAGE Aligned !!!
+
+	function Current_MSpace(Pool: Heap) return mspace;
 
 	--
 	-- Map of all created pools - см. Create_Pool

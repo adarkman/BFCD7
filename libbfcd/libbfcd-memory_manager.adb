@@ -51,7 +51,7 @@ package body LibBFCD.Memory_Manager is
 				Mem.Allow_Read + Mem.Allow_Write,
 				Mem.Map_Private, Mem.Nearby_Address); --Mem.Exact_Address); -- or Mem.Nearby_Address
 			Put_Line("Heap data: " & Integer_Address'Image(To_Integer(Pool.Data)));
-			Pool.Data_MSpace := Create_MSpace (Pool.Data, Pool.Real_Data_Size);
+			Insert(Pool.Data_MSpaces, Create_MSpace (Pool.Data, Pool.Real_Data_Size));
 		end if;	
 		--
 		Pool.Allocated := Memory_Map.Empty_Map;
@@ -106,7 +106,7 @@ package body LibBFCD.Memory_Manager is
 		free : Storage_Count;
 	begin
 		free := Get_Current_Free_Space (Pool);
-		Address := mspace_malloc (Pool.r.Data_MSpace, C.size_t(Size));
+		Address := mspace_malloc (Current_MSpace(Pool), C.size_t(Size));
 		Put("Alloc: " & Integer_Address'Image(To_Integer(Address)));
 		Put_Line(" " & Storage_Count'Image(Size));
 		if Address = NULL_ADDR then raise Memory_Allocation_Error; end if;
@@ -120,16 +120,18 @@ package body LibBFCD.Memory_Manager is
 		Size : in Storage_Count;
 		Alignment : in Storage_Count) is
 	begin
-		mspace_free (Pool.r.Data_MSpace, Address);
+		mspace_free (Current_MSpace(Pool), Address);
 		Memory_Map.Delete(Pool.r.Allocated, Address);
 	end Deallocate;
 
 	function Get_Current_Free_Space(Pool : in Heap) return Storage_Count is
-		m : mallinfo := mspace_mallinfo (Pool.r.Data_MSpace);
+		m : mallinfo := mspace_mallinfo (Current_MSpace(Pool));
 	begin
 		Put_Line ("Free in MSpace: " & C.size_t'Image(m.fordblks));
 		return Storage_Count(m.fordblks);
 	end Get_Current_Free_Space;
+
+	function Current_MSpace(Pool: Heap) return mspace is (Head(Pool.r.Data_MSpaces));
 
 end LibBFCD.Memory_Manager;
 
