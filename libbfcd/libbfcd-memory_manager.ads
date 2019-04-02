@@ -98,7 +98,7 @@ private
 		Data : System.Address;				-- Data pool base address
 		-- Здесь должен быть список MSpace'ов создаваемых
 		-- по мере расширения пула через mremap(2)
-		Data_MSpaces : Local_MSpaces_List.List := Null_Container;	-- Data MSpace for Doug Lea malloc
+		Data_MSpaces : Local_MSpaces_List.List := Null_Container;	-- Data MSpaces for Doug Lea malloc
 		--
 		Allocated : Memory_Map.Map;			-- Map Allocated(Address)->Reacheable(Boolean) for GC
 	end record;
@@ -117,7 +117,7 @@ private
 	-- Map of all created pools - см. Create_Pool
 	--
 	package Pools_Map is new Ada.Containers.Ordered_Maps (
-		Key_Type => Positive,
+		Key_Type => Positive, -- Real_Heap.ID
 		Element_Type => Real_Heap_Ptr);
 	Created_Pools : Pools_Map.Map := Pools_Map.Empty_Map;
 	
