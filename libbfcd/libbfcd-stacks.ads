@@ -15,6 +15,7 @@ package LibBFCD.Stacks is
 	-- между стеками.
 
 	Stack_Is_Empty : exception;
+	Stack_Index_Error : exception;
 
 	type Stack_Element is private;
 	type Stack is private;
@@ -24,6 +25,10 @@ package LibBFCD.Stacks is
 	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : Item_Type);
 	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return Item_Type;
 	function Top (S : Stack) return Item_Type;
+	function Nth (S : Stack; Index : Positive) return Item_Type; -- Index считается сверху стека
+	function Rot (S : in out Stack) return Item_Type; -- Forth ROT
+	function mRot (S : in out Stack) return Item_Type; -- Forth -ROT
+
 	function Size (S : Stack) return Natural;
 
 private
@@ -33,6 +38,13 @@ private
 		Next : access Stack_Element := null;
 		Prev : access Stack_Element := null;
 	end record;
+	--
+	-- Не использовать без необходимости, и только там где без него "край".
+	-- (в основном используется для гашения 'warning: accessibility check failure') 
+	-- Пока есть возможность - декларировать локальный _Ptr тип.
+	--
+	type Stack_Element_Internal_Ptr is access all Stack_Element;
+	--
 
 	type Stack is record
 		Start, Top : access Stack_Element;

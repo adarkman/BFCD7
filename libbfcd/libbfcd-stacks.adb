@@ -53,5 +53,53 @@ package body LibBFCD.Stacks is
 
 	function Size (S : Stack) return Natural is (S.Size);
 
+	function Nth (S : Stack; Index : Positive) return Item_Type is
+		type E_Ptr is access all Stack_Element;
+		elem : E_Ptr;
+		ci : Positive := 1;
+	begin
+		if Index > S.Size then raise Stack_Index_Error; end if;
+		if Index = 1 then return Top(s); end if;
+		elem := E_Ptr(S.Top);
+		while ci < Index loop
+			elem := E_Ptr(elem.Prev);
+			ci := ci +1;
+		end loop;
+		return elem.Item;
+	end Nth;
+
+	function Rot (S : in out Stack) return Item_Type is
+		e : Stack_Element_Internal_Ptr;
+	begin
+		e := S.Top.Prev.Prev; -- Nth 3
+		-- Изымаем третий элемент
+		e.Prev.Next := e.Next; 
+		e.Next.Prev := e.Prev;
+		-- Добавляем его наверх
+		S.Top.Next := e;
+		e.Prev := S.Top;
+		e.Next := null;
+		S.Top := e;
+		--
+		return S.Top.Item;
+	end Rot;
+
+	function mRot (S : in out Stack) return Item_Type is
+		e, e3 : Stack_Element_Internal_Ptr;
+	begin
+		e3 := S.Top.Prev.Prev; -- Nth 3
+		e := S.Top;
+		-- Top => Nth 1
+		S.Top := e.Prev;
+		S.Top.Next := null;
+		-- Вставляем бывший Top перед Nth 3
+		e3.Prev.Next := e;
+		e.Prev := e3.Prev;
+		e.Next := e3;
+		e3.Prev := e;
+		--
+		return S.Top.Item;
+	end mRot;
+
 end LibBFCD.Stacks;
 
