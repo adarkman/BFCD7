@@ -13,7 +13,7 @@ package LibBFCD.Code_Types is
 	--
 	-- Forth Word types
 	--
-	type Forth_Word_Ptr is access procedure;
+	type Binary_Word_Ptr is access procedure (Pool : in out Memory_Manager.Heap; Data_Address : System.Address);
 
 	type Forth_String is new Wide_String;
 
@@ -70,7 +70,7 @@ package LibBFCD.Code_Types is
 		Flags : Code_Word_Flags;
 		case Data_Type is
 			when Binary_Word =>
-				operator : Forth_Word_Ptr;
+				operator : Binary_Word_Ptr;
 			when Data_Word =>
 				data : access Forth_Data_Word;
 			when Forth_Word =>
