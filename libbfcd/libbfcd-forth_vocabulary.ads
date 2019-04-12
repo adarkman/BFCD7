@@ -10,7 +10,17 @@ package LibBFCD.Forth_Vocabulary is
 
 	function Create_Vocabulary (Pool : in out Heap; Name : in Forth_String) return access Vocabulary;
 
+	--
+	-- Add low level Forth Word to Vocabulary
+	--
+	procedure Add(v : access Vocabulary; word : Binary_Word_Ptr);
+
 private	
+	
+	--
+	-- Add allocated Code_Word to Vocabulary
+	--
+	procedure Add(v : access Vocabulary; word : Code_Word_Ptr);
 
 end LibBFCD.Forth_Vocabulary;
 

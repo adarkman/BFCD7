@@ -28,10 +28,11 @@ package LibBFCD.Code_Types is
 		next : access all Vocabulary_Element;
 	end record;
 
-	type Vocabulary_ID is new Positive;
+	--type Vocabulary_ID is new Positive;
 	type Vocabulary is record
+		Pool : Memory_Manager.Heap;
 		Name : access Forth_String;
-		elements : access Vocabulary_Element;
+		elements, top : access Vocabulary_Element;
 		next : access all Vocabulary;
 	end record;
 
@@ -49,7 +50,7 @@ package LibBFCD.Code_Types is
 			when Type_Code =>
 				code : access Code_Word;
 			when Type_Vocabulary =>
-				voc : Vocabulary_ID;
+				voc : access Vocabulary;
 		end case;
 	end record;
 

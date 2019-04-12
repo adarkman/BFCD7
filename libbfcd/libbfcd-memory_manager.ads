@@ -34,6 +34,13 @@ package LibBFCD.Memory_Manager is
 	-- Это как-то связано с областью видимости, - надо копать RM'12.
 	procedure Create_Pool (Pool : in out Heap; Code_Size, Data_Size : Storage_Count; Code_Word_Size : Positive);
 
+	--
+	-- Создаёт клон Pool'а, копируя указатель на реальные данные пула
+	-- применяется для передачи пулов в структуры, дабы не тащить переменную
+	-- по цепочке вызовов
+	--
+	procedure Clone (Child : in out Heap; Parent : in Heap);
+
 	overriding
 	procedure Allocate (
 		Pool : in out Heap;

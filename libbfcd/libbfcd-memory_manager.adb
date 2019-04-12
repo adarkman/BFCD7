@@ -76,6 +76,11 @@ package body LibBFCD.Memory_Manager is
 		return m;
 	end Create_MSpace;
 
+	procedure Clone (Child : in out Heap; Parent : in Heap) is 
+	begin
+		Child.r := Parent.r;
+	end Clone;
+
 	-- Unsafe version - do not check index range, use only if you know what you do
 	function Get_Code_Word_Address_Unsafe(Pool : in out Heap; Index : in Natural) return System.Address is
 	begin
