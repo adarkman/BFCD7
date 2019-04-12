@@ -14,6 +14,11 @@ package LibBFCD.VM_Thread.Forth_Words is
 
 	procedure Real_Call (Pool : in out Memory_Manager.Heap; Data : Thread_Data_Ptr; operator: Binary_Word_Ptr);
 
+	--
+	-- Low Level Forth Words
+	--
+	procedure Add_Integer(Pool : in out Memory_Manager.Heap; Data_Address : System.Address); -- +
+
 private
 
 	function Convert(ptr : System.Address) return Thread_Data_Ptr;
