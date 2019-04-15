@@ -29,5 +29,29 @@ package body LibBFCD.Code_Types is
 		return ptr;
 	end Allocate_Code_Word;
 
+	--
+	-- Forth String
+	--
+	function AllocateF(Pool : in out Memory_Manager.Heap; str : in Forth_String) return access Forth_String is
+		pragma Default_Storage_Pool (Pool);
+		ptr : access Forth_String := new Forth_String'(str);
+	begin
+		return ptr;
+	end AllocateF;
+	--
+	-- Vocabulary
+	--
+	protected body Vocabulary is
+		entry Create (lPool : in out Memory_Manager.Heap; lName : in Forth_String) when not Inited is
+		begin
+			Memory_Manager.Clone (Pool, lPool);
+			Name := AllocateF(Pool, lName);
+			elements := null;
+			top := null;
+			next := null;
+			Inited := True;
+		end Create;
+	end Vocabulary;
+
 end LibBFCD.Code_Types;
 

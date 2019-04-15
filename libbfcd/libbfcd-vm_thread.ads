@@ -22,7 +22,15 @@ package LibBFCD.VM_Thread is
 		entry Test;
 	end Forth_Thread;
 
+	--
+	-- Default Forth vocabulary
+	--
+	Main_Vocabulary_Name : constant Forth_String := "FORTH";
+	procedure Init_Global_Vocabulary (Pool : in out Memory_Manager.Heap);
+
 private
+	
+	Main_Vocabulary : access Vocabulary := null;
 
 	type Thread_Data is record
 		DStack : Data_Stack.Stack;

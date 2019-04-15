@@ -16,6 +16,7 @@ package LibBFCD.Code_Types is
 	type Binary_Word_Ptr is access procedure (Pool : in out Memory_Manager.Heap; Data_Address : System.Address);
 
 	type Forth_String is new Wide_String;
+	function AllocateF(Pool : in out Memory_Manager.Heap; str : in Forth_String) return access Forth_String;
 
 	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code, Type_Vocabulary);
 
@@ -29,12 +30,15 @@ package LibBFCD.Code_Types is
 	end record;
 
 	--type Vocabulary_ID is new Positive;
-	type Vocabulary is record
+	protected type Vocabulary is
+		entry Create (lPool : in out Memory_Manager.Heap; lName : in Forth_String);
+	private
+		Inited : Boolean := False;
 		Pool : Memory_Manager.Heap;
 		Name : access Forth_String;
 		elements, top : access Vocabulary_Element;
-		next : access all Vocabulary;
-	end record;
+		next : access Vocabulary;
+	end Vocabulary;
 
 	--
 	-- Forth Word with Data
