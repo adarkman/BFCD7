@@ -32,12 +32,12 @@ package body LibBFCD.Code_Types is
 	--
 	-- Forth String
 	--
-	function AllocateF(Pool : in out Memory_Manager.Heap; str : in Forth_String) return access Forth_String is
+	function Allocate(Pool : in out Memory_Manager.Heap; str : in Forth_String) return access Forth_String is
 		pragma Default_Storage_Pool (Pool);
 		ptr : access Forth_String := new Forth_String'(str);
 	begin
 		return ptr;
-	end AllocateF;
+	end Allocate;
 	--
 	-- Vocabulary
 	--
@@ -45,7 +45,7 @@ package body LibBFCD.Code_Types is
 		entry Create (lPool : in out Memory_Manager.Heap; lName : in Forth_String) when not Inited is
 		begin
 			Memory_Manager.Clone (Pool, lPool);
-			Name := AllocateF(Pool, lName);
+			Name := Allocate(Pool, lName);
 			elements := null;
 			top := null;
 			next := null;

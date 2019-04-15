@@ -16,7 +16,7 @@ package LibBFCD.Code_Types is
 	type Binary_Word_Ptr is access procedure (Pool : in out Memory_Manager.Heap; Data_Address : System.Address);
 
 	type Forth_String is new Wide_String;
-	function AllocateF(Pool : in out Memory_Manager.Heap; str : in Forth_String) return access Forth_String;
+	function Allocate(Pool : in out Memory_Manager.Heap; str : in Forth_String) return access Forth_String;
 
 	type Forth_Data_Type is (Type_Integer, Type_String, Type_Double, Type_Code, Type_Vocabulary);
 
