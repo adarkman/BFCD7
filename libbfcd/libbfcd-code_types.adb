@@ -1,5 +1,6 @@
 with System.Address_To_Access_Conversions;
 with LibBFCD; use LibBFCD;
+with Ada.Text_IO; use Ada.Text_IO;
 
 package body LibBFCD.Code_Types is
 
@@ -29,6 +30,7 @@ package body LibBFCD.Code_Types is
 		return ptr;
 	end Allocate_Code_Word;
 
+	------------------------------------------------------------------------------------------------------------
 	--
 	-- Forth String
 	--
@@ -38,19 +40,46 @@ package body LibBFCD.Code_Types is
 	begin
 		return ptr;
 	end Allocate;
+	------------------------------------------------------------------------------------------------------------
 	--
 	-- Vocabulary
 	--
 	protected body Vocabulary is
 		entry Create (lPool : in out Memory_Manager.Heap; lName : in Forth_String) when not Inited is
 		begin
-			Memory_Manager.Clone (Pool, lPool);
+			Memory_Manager.Clone (Child => Pool, Parent => lPool);
 			Name := Allocate(Pool, lName);
 			elements := null;
 			top := null;
 			next := null;
 			Inited := True;
 		end Create;
+
+		entry Allocate_Element (element : out Vocabulary_Element_Ptr) when Inited is
+			pragma Default_Storage_Pool (Pool);
+			lElement : access Vocabulary_Element := new Vocabulary_Element;
+		begin
+				element := Vocabulary_Element_Ptr(lElement);
+				element.word := null;
+				element.next := null;
+		end Allocate_Element;
+
+		entry Add (element : in out Vocabulary_Element_Ptr) when Inited is
+		begin
+			if elements = null then
+				elements := element;
+				top := element;
+			else
+				top.next := element;
+				top := element;
+			end if;
+		end Add;
+
+		entry Link_Pool_To (lPool : in out Memory_Manager.Heap) when Inited is
+		begin
+			Memory_Manager.Clone (Child => lPool, Parent => Pool);
+		end Link_Pool_To;
+
 	end Vocabulary;
 
 end LibBFCD.Code_Types;

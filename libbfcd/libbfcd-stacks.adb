@@ -3,10 +3,11 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 package body LibBFCD.Stacks is
 
-	procedure Create(S : in out Stack; Pool : in out Memory_Manager.Heap) is
-		pragma Default_Storage_Pool (Pool);
-		e : access Stack_Element := new Stack_Element;
+	procedure Create(S : in out Stack; lPool : in out Memory_Manager.Heap) is
+		e : Stack_Element_Ptr;
 	begin
+		Memory_Manager.Clone (Child => Pool, Parent => lPool);
+		e := new Stack_Element;
 		Put_Line("Stack creation ^^^.");
 		e.Prev := null;
 		e.Next := null;
@@ -16,10 +17,11 @@ package body LibBFCD.Stacks is
 		S.Size := 0;
 	end Create;
 
-	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : Item_Type) is
-		pragma Default_Storage_Pool (Pool);
-		e : access Stack_Element := new Stack_Element;
+	procedure Push (S : in out Stack; lPool: in out Memory_Manager.Heap; Item : Item_Type) is
+		e : Stack_Element_Ptr;
 	begin
+		Memory_Manager.Clone (Child => Pool, Parent => lPool);
+		e := new Stack_Element;
 		e.Prev := S.Top;
 		e.Item := Item;
 		S.Top.Next := e;
@@ -27,11 +29,11 @@ package body LibBFCD.Stacks is
 		S.Size := S.Size +1;
 	end Push;
 
-	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return Item_Type is
-		pragma Default_Storage_Pool (Pool);
+	function Pop (S : in out Stack; lPool : in out Memory_Manager.Heap) return Item_Type is
 		Item : Item_Type;
-		cur_top : access Stack_Element := S.Top;
+		cur_top : Stack_Element_Ptr := S.Top;
 	begin
+		Memory_Manager.Clone (Child => Pool, Parent => lPool);
 		if S.Size = 0 then raise Stack_Is_Empty; end if;
 		S.Top := cur_top.Prev;
 		S.Top.Next := null;
@@ -41,8 +43,8 @@ package body LibBFCD.Stacks is
 		return Item;
 	end Pop;
 
-	procedure Free_Element(Pool: in out Memory_Manager.Heap; Element : access Stack_Element) is
-		type E_Ptr is access all Stack_Element with Storage_Pool => Pool;
+	procedure Free_Element(lPool: in out Memory_Manager.Heap; Element : access Stack_Element) is
+		type E_Ptr is access all Stack_Element with Storage_Pool => lPool;
 		procedure Free is new Ada.Unchecked_Deallocation (Object => Stack_Element, Name => E_Ptr);
 		E : E_Ptr := E_Ptr(Element);
 	begin
@@ -69,7 +71,7 @@ package body LibBFCD.Stacks is
 	end Nth;
 
 	function Rot (S : in out Stack) return Item_Type is
-		e : Stack_Element_Internal_Ptr;
+		e : Stack_Element_Ptr;
 	begin
 		e := S.Top.Prev.Prev; -- Nth 3
 		-- Изымаем третий элемент
@@ -85,7 +87,7 @@ package body LibBFCD.Stacks is
 	end Rot;
 
 	function mRot (S : in out Stack) return Item_Type is
-		e, e3 : Stack_Element_Internal_Ptr;
+		e, e3 : Stack_Element_Ptr;
 	begin
 		e3 := S.Top.Prev.Prev; -- Nth 3
 		e := S.Top;

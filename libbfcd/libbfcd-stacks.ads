@@ -17,13 +17,15 @@ package LibBFCD.Stacks is
 	Stack_Is_Empty : exception;
 	Stack_Index_Error : exception;
 
+	Pool : Memory_Manager.Heap;
+
 	type Stack_Element is private;
 	type Stack is private;
 
-	procedure Create(S : in out Stack; Pool : in out Memory_Manager.Heap);
+	procedure Create(S : in out Stack; lPool : in out Memory_Manager.Heap);
 
-	procedure Push (S : in out Stack; Pool: in out Memory_Manager.Heap; Item : Item_Type);
-	function Pop (S : in out Stack; Pool : in out Memory_Manager.Heap) return Item_Type;
+	procedure Push (S : in out Stack; lPool: in out Memory_Manager.Heap; Item : Item_Type);
+	function Pop (S : in out Stack; lPool : in out Memory_Manager.Heap) return Item_Type;
 	function Top (S : Stack) return Item_Type;
 	function Nth (S : Stack; Index : Positive) return Item_Type; -- Index считается сверху стека
 	function Rot (S : in out Stack) return Item_Type; -- Forth ROT
@@ -44,14 +46,15 @@ private
 	-- Пока есть возможность - декларировать локальный _Ptr тип.
 	--
 	type Stack_Element_Internal_Ptr is access all Stack_Element;
+	type Stack_Element_Ptr is access all Stack_Element with Storage_Pool => Pool;
 	--
 
 	type Stack is record
-		Start, Top : access Stack_Element;
+		Start, Top : Stack_Element_Ptr;
 		Size : Natural := 0;
 	end record;
 
-	procedure Free_Element(Pool: in out Memory_Manager.Heap; Element : access Stack_Element);
+	procedure Free_Element(lPool: in out Memory_Manager.Heap; Element : access Stack_Element);
 
 end LibBFCD.Stacks;
 

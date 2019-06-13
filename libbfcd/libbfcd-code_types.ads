@@ -28,10 +28,14 @@ package LibBFCD.Code_Types is
 		word : access Code_Word;
 		next : access all Vocabulary_Element;
 	end record;
+	type Vocabulary_Element_Ptr is access all Vocabulary_Element;
 
 	--type Vocabulary_ID is new Positive;
 	protected type Vocabulary is
 		entry Create (lPool : in out Memory_Manager.Heap; lName : in Forth_String);
+		entry Allocate_Element (element : out Vocabulary_Element_Ptr);
+		entry Add (element : in out Vocabulary_Element_Ptr);
+		entry Link_Pool_To (lPool : in out Memory_Manager.Heap);
 	private
 		Inited : Boolean := False;
 		Pool : Memory_Manager.Heap;

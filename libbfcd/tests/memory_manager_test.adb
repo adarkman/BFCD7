@@ -38,7 +38,7 @@ begin
 	--Resize_Pool (Pool, 1024*1024*2);
 	v1 := Create_Vocabulary (Pool, "FORTH");
 	Put("Memory_Manager test: ");
-	if (Global_Allocs /= 14) or (Global_Deallocs /= 1) then
+	if (Global_Allocs /= 17) or (Global_Deallocs /= 1) then
 		Put_Line("FAILED");
 		Put_Line("Allocations:" & Natural'Image(Global_Allocs) & ", Deallocations: " & Natural'Image(Global_Deallocs));
 	else
