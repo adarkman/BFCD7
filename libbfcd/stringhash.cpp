@@ -42,7 +42,7 @@ unsigned StringHash::hash4096(const char* s)
     return h;
 }
 
-uint32_t StringHash::insert(const char* s)
+StringHash::UID StringHash::insert(const char* s)
 {
     uint32_t UID = getUniqueID(s);
     if(UID != 0) return UID; // Уже есть
@@ -86,10 +86,10 @@ uint32_t StringHash::getUniqueIDwithKey(unsigned h, const char *s)
     return 0;
 }
 
-const char* StringHash::get(uint32_t UID)
+const char* StringHash::get(UID uid)
 {
-    unsigned h = UID & 0xffff;
-    unsigned n = (UID & 0xffff0000) >> 16;
+    unsigned h = uid & 0xffff;
+    unsigned n = (uid & 0xffff0000) >> 16;
     TData* list = data[h];
     unsigned i = 0;
     while (i<n)
@@ -99,8 +99,18 @@ const char* StringHash::get(uint32_t UID)
     return (const char*)list->s;
 }
 
+StringHash::UID StringHash::find(const char *s)
+{
+	return getUniqueID(s);
+}
 
-
+StringHash::UID StringHash::findOrInsert(const char *s)
+{
+	int uid = find(s);
+	if(uid) return uid;
+	else
+		return insert(s);
+}
 
 
 

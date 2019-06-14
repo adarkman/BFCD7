@@ -17,6 +17,7 @@ class StringHash
     pthread_mutex_t mutex;
 
     public:
+		typedef uint32_t UID;
         struct TData
         {
             const char* s;
@@ -36,9 +37,12 @@ class StringHash
 
         int hash256(const char* s);
         unsigned hash4096(const char* s);
-        uint32_t insert(const char* s);
+        UID insert(const char* s);
         TData* valueList(int key) { return data[key]; }
-        const char* get(uint32_t UID);
+        const char* get(UID uid);
+		const char* operator() (UID uid) { return get(uid); }
+		UID find(const char *s);
+		UID findOrInsert(const char *s);
 
     protected:
         unsigned key(const char* s) { return hash4096(s); }
