@@ -34,6 +34,7 @@ public:
 	virtual CELL malloc(BfcdInteger)=0;
 	virtual void free(CELL)=0;
 	virtual char* strdup(const char*)=0;
+	virtual CELL code_alloc(BfcdInteger size)=0;
 
 	virtual ~TAbstractAllocator()=0;
 };
@@ -47,6 +48,7 @@ public:
 	virtual CELL malloc(BfcdInteger size) {return ::malloc(size);}
 	virtual void free(CELL ptr) {return ::free(ptr);}
 	virtual char* strdup(const char*s) {return ::strdup(s);}
+	virtual CELL code_alloc(BfcdInteger size) {return NULL;}
 	virtual ~SystemAllocator() {}
 };
 
@@ -188,7 +190,7 @@ public:
 	virtual char* strdup(const char* s);
 
 	// Code allocation
-	CELL code_alloc(BfcdInteger size);
+	virtual CELL code_alloc(BfcdInteger size);
 
 private:
 	bool createDataFile(BfcdInteger _vm_data_size);
@@ -205,6 +207,30 @@ protected:
 
 	// Список всех выделенных кусков памяти.
 	// Нужен для GC.
+	TStack<CELL>* allocatedChunks;
+};
+
+/*
+ * Пул внутри MemoryManager - для Task/Thread
+ */
+class SubPool: public TAbstractAllocator
+{
+public:
+	SubPool(CELL _base, BfcdInteger _code_size, BfcdInteger _data_size);
+	virtual ~SubPool();
+	
+	BfcdInteger getFreeSpace();
+	virtual CELL alloc(BfcdInteger size);
+	virtual void free(CELL ptr);
+	virtual char* strdup(const char* s);
+	virtual CELL code_alloc(BfcdInteger size);
+
+protected:
+	CELL base;
+	mspace heap;
+	pthread_mutex_t mutex;
+	BfcdInteger code_head;
+	BfcdInteger code_size, data_size;
 	TStack<CELL>* allocatedChunks;
 };
 

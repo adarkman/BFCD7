@@ -89,9 +89,11 @@ char* MemoryManager::strdup(const char* s)
 
 CELL MemoryManager::code_alloc(BfcdInteger size)
 {
-	void* ptr = ((char*)base)+size;
+	void* ptr = ((char*)base)+code_head;
 	code_head += size;
 	if (size % sizeof(CELL) != 0) { code_head += sizeof(CELL) - size; }
+	if(code_head>vm_code_size) throw VMOutOfMemory();
+	return ptr;
 }
 
 //************************************************************ Private
@@ -143,5 +145,76 @@ bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
     }
     __CODE(printf("VM Mapped at 0x%p\n", base));
     return true;
+}
+
+/*
+ * SubPool
+ */
+
+SubPool::SubPool(CELL _base,BfcdInteger _code_size, BfcdInteger _data_size):
+    base (_base),
+    heap(NULL),
+	code_head(0),
+	code_size(_code_size),
+	data_size(_data_size)
+{
+    pthread_mutex_init(&mutex, NULL);
+	allocatedChunks = new TStack<CELL>(&systemAllocator);
+	heap = create_mspace_with_base(((char*)base)+code_size, data_size, 1);
+    if(!heap) throw MSpaceError();
+	// MSPACE tuning
+	// disable separated allocation of large chunks
+	mspace_track_large_chunks (heap, 1); 
+	// disable additional system memory chunks allocation
+	mspace_set_footprint_limit (heap, 0);
+}
+
+SubPool::~SubPool()
+{
+	if(allocatedChunks) delete allocatedChunks;
+    if(heap) destroy_mspace(heap);
+    pthread_mutex_destroy(&mutex);
+}
+
+BfcdInteger SubPool::getFreeSpace()
+{
+    mallinfo info = mspace_mallinfo(heap);
+    return info.fordblks;
+}
+
+CELL SubPool::alloc(BfcdInteger size)
+{
+    if(size>=getFreeSpace()) throw VMOutOfMemory();
+    pthread_mutex_lock(&mutex);
+    void* p = mspace_malloc(heap, size);
+	allocatedChunks->push(p);
+    pthread_mutex_unlock(&mutex);
+    return p;
+}
+
+void SubPool::free(CELL ptr)
+{
+    if(ptr)
+    {
+        pthread_mutex_lock(&mutex);
+        mspace_free(heap, ptr);
+        pthread_mutex_unlock(&mutex);
+    }
+}
+
+char* SubPool::strdup(const char* s)
+{
+    char* ds = (char*) this->alloc(strlen(s)+1);
+    strcpy(ds, s);
+    return ds;
+}
+
+CELL SubPool::code_alloc(BfcdInteger size)
+{
+	void* ptr = ((char*)base)+code_head;
+	code_head += size;
+	if (size % sizeof(CELL) != 0) { code_head += sizeof(CELL) - size; }
+	if(code_head>code_size) throw VMOutOfMemory();
+	return ptr;
 }
 
