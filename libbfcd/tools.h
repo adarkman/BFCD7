@@ -20,20 +20,10 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#define __DEBUG__
 #include "itoa.h"
 #include "config.h"
-
-#if SIZEOF_INT==SIZEOF_INTP
- 	#define BCELL int
-#elif SIZEOF_LONG_LONG==SIZEOF_INTP
-	#define BCELL long long
-#else
- 	#error Unable to define BCELL
-#endif
-
-#if SIZEOF_LONG_LONG!=SIZEOF_INT*2
- 	#error sizeof(long long)!=sizeof(int)*2
-#endif
+#include "BasicTypes.h"
 
 #ifdef __DEBUG__
 #define __CODE(c) { c; }
@@ -43,7 +33,9 @@
 
 #define __MARK { fprintf(stderr,"** mark\n"); fflush(stderr); }
 
-#define Kb(k) (1024*k)
-#define Mb(m) (Kb(Kb(m)))
+#define KB(a) (1024*a)
+#define MB(a) (1024*KB(1)*a)
+#define GB(a) (1024*MB(1)*a)
+
 
 #endif //__BFCD3_TOOLS_H__

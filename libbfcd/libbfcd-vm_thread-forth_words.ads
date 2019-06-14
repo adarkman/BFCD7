@@ -18,6 +18,7 @@ package LibBFCD.VM_Thread.Forth_Words is
 	-- Low Level Forth Words
 	--
 	procedure Add_Integer(Pool : in out Memory_Manager.Heap; Data_Address : System.Address); -- +
+	procedure Minus_Integer(Pool : in out Memory_Manager.Heap; Data_Address : System.Address); -- -
 
 private
 
