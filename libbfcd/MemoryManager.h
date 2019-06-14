@@ -33,6 +33,7 @@ class TAbstractAllocator
 public:
 	virtual CELL malloc(BfcdInteger)=0;
 	virtual void free(CELL)=0;
+	virtual char* strdup(const char*)=0;
 
 	virtual ~TAbstractAllocator()=0;
 };
@@ -45,6 +46,7 @@ class SystemAllocator: public TAbstractAllocator
 public:
 	virtual CELL malloc(BfcdInteger size) {return ::malloc(size);}
 	virtual void free(CELL ptr) {return ::free(ptr);}
+	virtual char* strdup(const char*s) {return ::strdup(s);}
 	virtual ~SystemAllocator() {}
 };
 
@@ -183,7 +185,7 @@ public:
 	virtual CELL alloc(BfcdInteger size);
 	virtual void free(CELL ptr);
 
-	char* strdup(const char* s);
+	virtual char* strdup(const char* s);
 
 	// Code allocation
 	CELL code_alloc(BfcdInteger size);

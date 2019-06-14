@@ -65,6 +65,7 @@ CELL MemoryManager::alloc(BfcdInteger size)
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
     void* p = mspace_malloc(heap, size);
+	allocatedChunks->push(p);
     pthread_mutex_unlock(&mutex);
     return p;
 }
