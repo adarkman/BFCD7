@@ -46,15 +46,15 @@ enum VM_STATE {VM_EXECUTE=0, VM_COMPILE};
 
 struct VMThreadData
 {
-	VMThreadData(TAbstractAllocator* _allocator, CELL* _code);
+	VMThreadData(TAbstractAllocator* _allocator, CELL _code);
 
 //---	
 	TAbstractAllocator *allocator;
 
 	AStack *AS;			// Арифметический стек
 	RStack *RS;			// Стек возврата	
-	BfcdInteger IP;				// Instruction Pointer
-	CELL* code;					// Указатель на массив кода
+	CELL IP;				// Instruction Pointer
+	CELL code;					// Указатель на массив кода
 
 	BfcdInteger STDIN, STDOUT, STDERR;
 };
