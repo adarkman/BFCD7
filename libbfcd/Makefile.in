@@ -23,8 +23,8 @@ ARCH=@target@
 BFCD_LIB_NAME=libbfcd.so.7
 BFCD_LIB=libbfcd.so
 
-SRC=itoa.c malloc.c MemoryManager.cpp stringhash.cpp
-OBJS=itoa.o malloc.o MemoryManager.o stringhash.o
+SRC=itoa.c malloc.c MemoryManager.cpp stringhash.cpp forth.pp
+OBJS=itoa.o malloc.o MemoryManager.o stringhash.o forth.o
 
 prefix=@prefix@
 BIN_DIR=@exec_prefix@/bin
@@ -35,8 +35,9 @@ BFCD_SHARE_DIR=@datarootdir@/bfcd7
 
 CADDFLAGS=@CFLAGS@
 INCLUDE_DIRS=-I/usr/local/include
+WARN_FLAGS=-Wno-unused-result
 CCFLAGS=-O2 -fPIC -pthread $(INCLUDE_DIRS) $(CFLAGS) -DDATA_DIR=\"$(BFCD_DATA_DIR)/\" \
-	-DBASE_COMPILER=\"$(BFCD_DATA_DIR)/$(NAME)\" -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS)
+	-DBASE_COMPILER=\"$(BFCD_DATA_DIR)/$(NAME)\" -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS) $(WARN_FLAGS)
 
 CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \
 	-funroll-loops -fno-rtti

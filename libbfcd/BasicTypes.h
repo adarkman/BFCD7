@@ -16,6 +16,7 @@ typedef int BfcdInteger int;
 #endif
 const unsigned CELL_SIZE = SIZEOF_INTP;
 typedef void* CELL;
+typedef char* CHAR_P; 
 
 #if SIZEOF_LONG_LONG!=SIZEOF_INT*2
  	#error sizeof(long long)!=sizeof(int)*2

@@ -39,6 +39,7 @@ public:
 	virtual ~TAbstractAllocator()=0;
 };
 #define ZNEW(TYPE) malloc(sizeof(TYPE))
+#define XNEW(ALLOC,TYPE) new (ALLOC->ZNEW(TYPE)) TYPE
 
 // Глобальный системный аллокатор на стандартных malloc/free
 // Thread safe according to POSIX
@@ -57,6 +58,7 @@ extern SystemAllocator systemAllocator;
 /* Реализация стека не типична.
  * Стек сделан на двухсвязном списке для возможности быстрой передачи слайсов
  * между стеками.
+ * Заодно имеет интерфейс типа Vector, чтоб два раза не вставать.
  * Плюс отдельный аллокатор.
  */
 template <typename T> class TStack
@@ -95,6 +97,7 @@ public:
 	}
 
 
+	void isEmpty() {return top==start;}
 	void push(T _item) 
 	{
 		TStackElement* e=new (allocator->ZNEW(TStackElement)) TStackElement();
@@ -104,6 +107,7 @@ public:
 		top = e;
 		size++;
 	}
+	void add(T _item) {puth(_item);}
 	T pop()
 	{
 		if (!size) throw StackEmptyError();
@@ -127,8 +131,17 @@ public:
 		if(index==1) return top->item;
 		TStackElement* e = top;
 		int i = 1;
-		while (i<index) { e = e.prev; i++; }
-		return e;
+		while (i<index) { e = e->prev; i++; }
+		return e->item;
+	}
+	T& operator[] (BfcdInteger index)
+	{
+		if(index>size) throw StackUnderflowError();
+		if(index==1) return start->next->item;
+		TStackElement* e = start->next;
+		int i = 1;
+		while (i<index) { e = e->next; i++; }
+		return e->item;
 	}
 	T rot() 
 	{

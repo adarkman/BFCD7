@@ -30,7 +30,7 @@ MemoryManager::MemoryManager(BfcdInteger _vm_code_size, BfcdInteger _vm_data_siz
 	int page_count_code = (_vm_code_size/PAGE_SIZE)+1;
 	vm_code_size = PAGE_SIZE*page_count_code;
 	//
-    __CODE(printf("MemoryManager PAGES=%d SIZE=%ld Mb\n", page_count_data+page_count_code, (vm_data_size+vm_code_size)/MB(1)));
+    __CODE(printf("MemoryManager PAGES=%d SIZE=%lld Mb\n", page_count_data+page_count_code, (vm_data_size+vm_code_size)/MB(1)));
     if(!createDataFile(vm_data_size+vm_code_size)) throw VMImageCreationError();
 	heap = create_mspace_with_base(((char*)base)+vm_code_size, vm_data_size, 1);
     if(!heap) throw MSpaceError();
@@ -108,7 +108,7 @@ bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
      *fsync(data_fd);
 	 */
 #ifdef O_TMPFILE
-	data_fd = open("/tmp",O_TMPFILE|O_RDWR|S_IRUSR|S_IWUSR);
+	data_fd = open("/tmp",O_TMPFILE|O_RDWR,S_IRUSR|S_IWUSR);
 #else	
     char ft[] = "1dfvmXXXXXX";
 	data_fd = mkstemp(ft);
