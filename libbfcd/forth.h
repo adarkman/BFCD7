@@ -19,13 +19,21 @@ static_assert(sizeof(BfcdInteger) >= sizeof(StringHash::UID),
 /*
  * Заголовок словарной статьи
  */
+struct VMThreadData;
+typedef bool (*BFCD_OP)(VMThreadData*);
+struct Vocabulary;
+
 struct WordHeader
 {
 	StringHash::UID name;
 	CHAR_P help;
 	CHAR_P source;
 	int flags;
-	WordHeader* next;
+	WordHeader* prev;
+	Vocabulary *voc;
+	BFCD_OP CFA;
+
+	WordHeader(): name(0), help(NULL), source(NULL), flags(0), prev(NULL), voc(NULL), CFA(NULL) {}
 };
 
 /*
@@ -33,21 +41,58 @@ struct WordHeader
  */
 struct Vocabulary
 {
+	Vocabulary (TAbstractAllocator* _alloc, const char* _name);
+	~Vocabulary();
+
+	WordHeader* add_word(const char* _name, BFCD_OP CFA);
+//---	
+	StringHash::UID name;
 	WordHeader *last;
 	Vocabulary *prev;
+	
+	TAbstractAllocator* allocator;
+	// Хеш имён слов
+	StringHash* names;
+	// Собственно список слов в словаре
+	TStack<WordHeader*>* words;
 };
 
+/*
+ * Коды ошибок VM
+ */
+enum ErrorCodes
+{
+	VM_OK=0,
+	VM_SEGFAULT,
+	VM_TERMINATE_THREAD,			// На самом деле не ошибка, а запрос на остановку потока выполнения
+									// см. defword(bye)
+	VM_ERROR_LAST
+};
+
+extern const char* VM_Errors[VM_ERROR_LAST];
 /*
  * Поток исполнения/компиляции BFCD VM
  */
 typedef TStack<BfcdInteger> AStack;
 typedef TStack<CELL> RStack;
+typedef TStack<Vocabulary*> VocabularyStack;
+
 enum VM_STATE {VM_EXECUTE=0, VM_COMPILE};
 
 struct VMThreadData
 {
-	VMThreadData(TAbstractAllocator* _allocator, CELL _code);
+	VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
+				 CELL _code, CELL start_IP,
+				 BfcdInteger _tib_size=KB(4));
+	~VMThreadData();
 
+	void apush(BfcdInteger a) {AS->push(a);}
+	BfcdInteger apop() {return AS->pop();}
+	BfcdInteger atop() {return AS->_top();}
+
+	// Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
+	// требует постоянной доработки
+	bool is_valid_for_execute(void* fn);
 //---	
 	TAbstractAllocator *allocator;
 
@@ -55,9 +100,24 @@ struct VMThreadData
 	RStack *RS;			// Стек возврата	
 	CELL IP;				// Instruction Pointer
 	CELL code;					// Указатель на массив кода
+	BfcdInteger vm_state;		// VM_STATE
+	BfcdInteger _errno;			// Код ошибки, выставляется в словах
 
+	// Входной поток
 	BfcdInteger STDIN, STDOUT, STDERR;
+	BfcdInteger TIB_SIZE;
+	char* tib;
+	BfcdInteger tib_index;
+	BfcdInteger tib_length;
+
+	// Основание чисел при парсинге
+	BfcdInteger digit_base;
+
+	// Список _всех_ словарей - общий для всех потоков.
+	TStack<Vocabulary*> *vocs;
 };
+
+#define defword(NAME) bool f_##NAME(VMThreadData *data)
 
 class VMThread
 {
@@ -69,6 +129,17 @@ protected:
 /*
  * Forth low level words
  */
+//********************************************************** Базовые
+//слова
+defword(bl); 		// bl
+defword(ifdup); 	// ?dup
+defword(inc);		// 1+
+defword(dec);		// 1-
+defword(state);		// STATE
+defword(get);		// @
+defword(put);		// !
+defword(bye);		// BYE
+defword(execute);	// EXECUTE
 
 #endif //FORTH_H
 

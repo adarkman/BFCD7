@@ -1,7 +1,7 @@
 #include "stringhash.h"
 #include <new>			// For Placement NEW
 
-StringHash::StringHash(MemoryManager* _mem, size_t _size, unsigned _bits):
+StringHash::StringHash(TAbstractAllocator* _mem, size_t _size, unsigned _bits):
     size(_size), mem(_mem), bits(_bits), mask(size-1)
 {
     if(size>65535) throw HashOversizeError();

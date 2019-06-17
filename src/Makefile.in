@@ -17,8 +17,8 @@ GNATMAKE=@gnatmake@
 
 ARCH=@target@
 
-SRC=main.cpp
-OBJS=main.o
+SRC=bfcd.cpp
+OBJS=bfcd.o
 
 prefix=@prefix@
 BIN_DIR=@exec_prefix@/bin

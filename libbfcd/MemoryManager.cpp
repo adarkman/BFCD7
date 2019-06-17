@@ -30,7 +30,7 @@ MemoryManager::MemoryManager(BfcdInteger _vm_code_size, BfcdInteger _vm_data_siz
 	int page_count_code = (_vm_code_size/PAGE_SIZE)+1;
 	vm_code_size = PAGE_SIZE*page_count_code;
 	//
-    __CODE(printf("MemoryManager PAGES=%d SIZE=%lld Mb\n", page_count_data+page_count_code, (vm_data_size+vm_code_size)/MB(1)));
+    __CODE(printf("MemoryManager PAGES=%d SIZE=%lldMb\n", page_count_data+page_count_code, (vm_data_size+vm_code_size)/MB(1)));
     if(!createDataFile(vm_data_size+vm_code_size)) throw VMImageCreationError();
 	heap = create_mspace_with_base(((char*)base)+vm_code_size, vm_data_size, 1);
     if(!heap) throw MSpaceError();
@@ -47,8 +47,8 @@ MemoryManager::~MemoryManager()
     if(heap) destroy_mspace(heap);
     if(base != MAP_FAILED)
     {
-        msync(base, vm_data_size, MS_SYNC);
-        munmap(base, vm_data_size);
+        msync(base, vm_code_size+vm_data_size, MS_SYNC);
+        munmap(base, vm_code_size+vm_data_size);
     }
     if(data_fd != -1) close(data_fd);
     pthread_mutex_destroy(&mutex);
@@ -60,7 +60,7 @@ BfcdInteger MemoryManager::getFreeSpace()
     return info.fordblks;
 }
 
-CELL MemoryManager::alloc(BfcdInteger size)
+CELL MemoryManager::malloc(BfcdInteger size)
 {
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
@@ -80,9 +80,14 @@ void MemoryManager::free(CELL ptr)
     }
 }
 
+bool MemoryManager::is_address_valid(void* p)
+{
+	return (base>=p) && (((char*)base)+vm_code_size+vm_data_size)<(char*)p;
+}
+
 char* MemoryManager::strdup(const char* s)
 {
-    char* ds = (char*) this->alloc(strlen(s)+1);
+    char* ds = (char*) this->malloc(strlen(s)+1);
     strcpy(ds, s);
     return ds;
 }
@@ -182,7 +187,7 @@ BfcdInteger SubPool::getFreeSpace()
     return info.fordblks;
 }
 
-CELL SubPool::alloc(BfcdInteger size)
+CELL SubPool::malloc(BfcdInteger size)
 {
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
@@ -204,7 +209,7 @@ void SubPool::free(CELL ptr)
 
 char* SubPool::strdup(const char* s)
 {
-    char* ds = (char*) this->alloc(strlen(s)+1);
+    char* ds = (char*) this->malloc(strlen(s)+1);
     strcpy(ds, s);
     return ds;
 }

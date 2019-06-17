@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <new>
 
-struct SimpleException { virtual ~SimpleException()=0; virtual char* operator () ()=0;  };
+struct SimpleException { virtual ~SimpleException() {} virtual char* operator () ()=0;  };
 #define exception(Name,Parent) struct Name: public Parent { char* Name##_name; \
 	Name() {Name##_name = strdup(#Name);} ~Name() {free(Name##_name);} \
 	virtual char* operator () () {return Name##_name;} };
@@ -35,8 +35,9 @@ public:
 	virtual void free(CELL)=0;
 	virtual char* strdup(const char*)=0;
 	virtual CELL code_alloc(BfcdInteger size)=0;
+	virtual bool is_address_valid(void*) {return true;}
 
-	virtual ~TAbstractAllocator()=0;
+	virtual ~TAbstractAllocator() {}
 };
 #define ZNEW(TYPE) malloc(sizeof(TYPE))
 #define XNEW(ALLOC,TYPE) new (ALLOC->ZNEW(TYPE)) TYPE
@@ -97,7 +98,7 @@ public:
 	}
 
 
-	void isEmpty() {return top==start;}
+	bool isEmpty() {return top==start;}
 	void push(T _item) 
 	{
 		TStackElement* e=new (allocator->ZNEW(TStackElement)) TStackElement();
@@ -197,8 +198,9 @@ public:
 
 	// Data allocation
 	BfcdInteger getFreeSpace();
-	virtual CELL alloc(BfcdInteger size);
+	virtual CELL malloc(BfcdInteger size);
 	virtual void free(CELL ptr);
+	virtual bool is_address_valid(void* p);
 
 	virtual char* strdup(const char* s);
 
@@ -233,7 +235,7 @@ public:
 	virtual ~SubPool();
 	
 	BfcdInteger getFreeSpace();
-	virtual CELL alloc(BfcdInteger size);
+	virtual CELL malloc(BfcdInteger size);
 	virtual void free(CELL ptr);
 	virtual char* strdup(const char* s);
 	virtual CELL code_alloc(BfcdInteger size);

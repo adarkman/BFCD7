@@ -31,7 +31,7 @@ class StringHash
         TData** data;
 
     public:
-        StringHash(MemoryManager* _mem, size_t _size = 4096, // 2, 4, 8, 16, 32 ....
+        StringHash(TAbstractAllocator* _mem, size_t _size = 4096, // 2, 4, 8, 16, 32 ....
                    unsigned _bits = 12); // степень двойки _size
         ~StringHash();
 
