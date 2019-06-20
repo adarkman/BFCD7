@@ -20,6 +20,7 @@ Vocabulary::Vocabulary (TAbstractAllocator* _alloc, const char *_name):
 	name=names->insert(_name);
 	stl_allocator = XNEW(allocator,WordsMapAllocator) (allocator);
 	words=XNEW(allocator,WordsMap)(0, *stl_allocator);
+	pthread_mutex_init(&mutex, NULL); 
 }
 
 Vocabulary::~Vocabulary()
@@ -28,10 +29,12 @@ Vocabulary::~Vocabulary()
 	allocator->free(names);
 	words->~WordsMap();
 	allocator->free(words);
+	pthread_mutex_destroy(&mutex);
 }
 
 WordHeader*	Vocabulary::add_word(const char* _name, BFCD_OP CFA)
 {
+	pthread_mutex_lock(&mutex);
 	WordHeader *wh = XNEW(allocator,WordHeader)();
 	wh->name = names->insert(_name);
 	__CODE(printf("Vocabulary::add_word %p %x\n",wh, wh->name));
@@ -42,6 +45,7 @@ WordHeader*	Vocabulary::add_word(const char* _name, BFCD_OP CFA)
 	//words->push(wh);
 	__CODE(printf("\\ insert '%s' in Vocabulary::words\n", names->get(wh->name)));
 	(*words)[wh->name] = wh; // Вариант: words->insert(std::make_pair(wh->name,wh));
+	pthread_mutex_unlock(&mutex);
 	return wh;
 }
 /*

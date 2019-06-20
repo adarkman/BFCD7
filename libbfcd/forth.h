@@ -53,6 +53,8 @@ struct Vocabulary
 //---	
 protected:
 	StringHash::UID name;
+	// Добавление в словарь не потокобезопасно 
+	pthread_mutex_t mutex;
 	// Последнее определённое слово
 	WordHeader *last;
 	// Предыдущий словарь, на момент определения словаря (см. find_all_chain)
