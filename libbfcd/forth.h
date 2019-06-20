@@ -28,6 +28,7 @@ struct Vocabulary;
 
 struct WordHeader
 {
+	enum Flags {IMMEDIATE=-1};
 	StringHash::UID name;
 	CHAR_P help;
 	CHAR_P source;
@@ -48,8 +49,14 @@ struct Vocabulary
 	~Vocabulary();
 
 	WordHeader* add_word(const char* _name, BFCD_OP CFA);
-	//WordHeader* find_self(const char* _name); 
-	//WordHeader* find_all_chain(const char* _name);
+
+	typedef std::pair<int, WordHeader*> FindResult;
+	// Поиск только в текущем словаре
+	FindResult find_self(const char* _name); 
+	FindResult find_self(StringHash::UID _name); 
+	// Поиск в цепочке словарей через this->prev
+	FindResult find_all_chain(const char* _name); 
+	FindResult find_all_chain(StringHash::UID _name); 
 //---	
 protected:
 	StringHash::UID name;
@@ -63,7 +70,7 @@ protected:
 	TAbstractAllocator* allocator;
 	// Юзаем STL unordered_map в качестве хеш-таблицы и кастомным аллокатором.
 	// (пора подучить современный C++ :/ )
-	typedef STLAllocator<std::pair<StringHash::UID, WordHeader*>> WordsMapAllocator;
+	typedef STLAllocator<std::pair<const StringHash::UID, WordHeader*>> WordsMapAllocator;
 	typedef std::unordered_map<StringHash::UID,
 				WordHeader*,
 				std::hash<StringHash::UID>,

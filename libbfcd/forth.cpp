@@ -48,6 +48,43 @@ WordHeader*	Vocabulary::add_word(const char* _name, BFCD_OP CFA)
 	pthread_mutex_unlock(&mutex);
 	return wh;
 }
+
+Vocabulary::FindResult Vocabulary::find_self(const char* _name)
+{
+	auto uid = names->find(_name);
+	if(!uid)
+		return FindResult(0,NULL);
+	else
+	{
+		return find_self(uid);
+	}
+}
+
+Vocabulary::FindResult Vocabulary::find_self(StringHash::UID _name)
+{
+	auto res = words->find(_name);
+	if(res != words->end())
+		return FindResult(res->second->flags==WordHeader::IMMEDIATE?-1:1, res->second);
+	else
+		return FindResult(0,NULL);
+}
+
+// Я тупой и не знаю как это оформить шаблоном не создавая шаблонный класс
+#define find_all_chain_T(TYPE) \
+Vocabulary::FindResult Vocabulary::find_all_chain(TYPE _name) \
+{ \
+	auto curr = this->prev; \
+	auto res = curr->find_self(_name); \
+	while (!res.first) \
+	{ \
+		res = curr->find_self(_name); \
+		if(!(curr = curr->prev)) break; \
+	} \
+	return res; \
+}
+find_all_chain_T(const char*);
+find_all_chain_T(StringHash::UID);
+
 /*
  * VMThreadData
  */
