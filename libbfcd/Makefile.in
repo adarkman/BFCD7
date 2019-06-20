@@ -23,7 +23,7 @@ ARCH=@target@
 BFCD_LIB_NAME=libbfcd.so.7
 BFCD_LIB=libbfcd.so
 
-SRC=itoa.c malloc.c MemoryManager.cpp stringhash.cpp forth.pp bfcd-vm.cpp
+SRC=itoa.c malloc.c MemoryManager.cpp stringhash.cpp forth.cpp bfcd-vm.cpp
 OBJS=itoa.o malloc.o MemoryManager.o stringhash.o forth.o bfcd-vm.o
 
 prefix=@prefix@

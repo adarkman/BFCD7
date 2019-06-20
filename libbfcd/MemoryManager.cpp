@@ -64,8 +64,10 @@ CELL MemoryManager::malloc(BfcdInteger size)
 {
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
+	//__CODE(printf("\\ MM::malloc - start %ld\n", size));
     void* p = mspace_malloc(heap, size);
 	allocatedChunks->push(p);
+	//__CODE(printf("\\ MM::malloc - %p\n", p));
     pthread_mutex_unlock(&mutex);
     return p;
 }

@@ -11,6 +11,9 @@
 #include "MemoryManager.h"
 #include "stringhash.h"
 #include <assert.h>
+#include <functional> // Инстанциированные темплейты типа std::hash<unsigned int>
+#include <utility>
+#include <unordered_map>
 
 // require C11 standart in compiler
 static_assert(sizeof(BfcdInteger) >= sizeof(StringHash::UID),
@@ -45,16 +48,30 @@ struct Vocabulary
 	~Vocabulary();
 
 	WordHeader* add_word(const char* _name, BFCD_OP CFA);
+	//WordHeader* find_self(const char* _name); 
+	//WordHeader* find_all_chain(const char* _name);
 //---	
+protected:
 	StringHash::UID name;
+	// Последнее определённое слово
 	WordHeader *last;
+	// Предыдущий словарь, на момент определения словаря (см. find_all_chain)
 	Vocabulary *prev;
 	
 	TAbstractAllocator* allocator;
+	// Юзаем STL unordered_map в качестве хеш-таблицы и кастомным аллокатором.
+	// (пора подучить современный C++ :/ )
+	typedef STLAllocator<std::pair<StringHash::UID, WordHeader*>> WordsMapAllocator;
+	typedef std::unordered_map<StringHash::UID,
+				WordHeader*,
+				std::hash<StringHash::UID>,
+				std::equal_to<StringHash::UID>,
+				WordsMapAllocator> WordsMap;
+	WordsMapAllocator* stl_allocator;
 	// Хеш имён слов
 	StringHash* names;
 	// Собственно список слов в словаре
-	TStack<WordHeader*>* words;
+	WordsMap* words;
 };
 
 /*

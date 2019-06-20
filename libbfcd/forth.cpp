@@ -18,14 +18,15 @@ Vocabulary::Vocabulary (TAbstractAllocator* _alloc, const char *_name):
 {
 	names=XNEW(allocator,StringHash) (allocator);
 	name=names->insert(_name);
-	words=XNEW(allocator,TStack<WordHeader*>)(allocator);
+	stl_allocator = XNEW(allocator,WordsMapAllocator) (allocator);
+	words=XNEW(allocator,WordsMap)(0, *stl_allocator);
 }
 
 Vocabulary::~Vocabulary()
 {
 	names->~StringHash();
 	allocator->free(names);
-	words->~TStack<WordHeader*>();
+	words->~WordsMap();
 	allocator->free(words);
 }
 
@@ -33,10 +34,14 @@ WordHeader*	Vocabulary::add_word(const char* _name, BFCD_OP CFA)
 {
 	WordHeader *wh = XNEW(allocator,WordHeader)();
 	wh->name = names->insert(_name);
+	__CODE(printf("Vocabulary::add_word %p %x\n",wh, wh->name));
 	wh->voc = this;
-	if(!words->isEmpty()) wh->prev = words->_top();
+	wh->prev = last;
+	last = wh;
 	wh->CFA = CFA;
-	words->push(wh);
+	//words->push(wh);
+	__CODE(printf("\\ insert '%s' in Vocabulary::words\n", names->get(wh->name)));
+	(*words)[wh->name] = wh; // Вариант: words->insert(std::make_pair(wh->name,wh));
 	return wh;
 }
 /*

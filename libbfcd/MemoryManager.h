@@ -249,6 +249,28 @@ protected:
 	TStack<CELL>* allocatedChunks;
 };
 
+/*
+ * Адаптер для STL
+ */
+template <class T> class STLAllocator
+{
+public:	
+	using value_type = T;
+	STLAllocator(TAbstractAllocator *_mm): mm(_mm) {}
+	template <class U> STLAllocator(const STLAllocator<U> &other) { mm=other.mm; }
+
+	// STL вызывает аллокатор не с количеством байт, а c количеством елементов T
+	// В C++11: a.allocate(n) - allocates storage suitable for n objects of type T
+	T* allocate(std::size_t count) { return static_cast<T*>(mm->malloc(count*sizeof(T))); }
+	void deallocate(T* p, std::size_t) { if(p && mm->is_address_valid(p)) mm->free(p); }
+
+//---
+	TAbstractAllocator* mm;
+};
+
+template <class T, class U> bool operator==(const STLAllocator<T>& a, const STLAllocator<U>& b) { return a->mm==b->mm; }
+template <class T, class U> bool operator!=(const STLAllocator<T>& a, const STLAllocator<U>& b) { return ! operator == (a,b); }
+
 #endif //MEMORY_MANAGER_H
 
 
