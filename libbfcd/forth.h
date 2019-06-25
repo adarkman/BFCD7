@@ -57,6 +57,8 @@ struct Vocabulary
 	// Поиск в цепочке словарей через this->prev
 	FindResult find_all_chain(const char* _name); 
 	FindResult find_all_chain(StringHash::UID _name); 
+	// Проверяет наличие слова с нужным CFA в словаре.
+	bool check_CFA(BFCD_OP cfa);
 //---	
 protected:
 	StringHash::UID name;
@@ -84,7 +86,7 @@ protected:
 };
 
 /*
- * Коды ошибок VM
+ 	//Поиск слова в стэке словарей	//Поиск слова в стэке словарей..* Коды ошибок VM
  */
 enum ErrorCodes
 {
@@ -109,18 +111,31 @@ struct VMThreadData
 {
 	VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP,
-				 BfcdInteger _tib_size=KB(4));
+				 TAbstractAllocator* _main_VM_allocator,
+				 BfcdInteger _tib_size=KB(4),
+				 bool _use_tty = false,
+				 int _STDIN = STDIN_FILENO,
+				 int _STDOUT = STDOUT_FILENO,
+				 int _STDERR = STDERR_FILENO);
 	~VMThreadData();
 
 	void apush(BfcdInteger a) {AS->push(a);}
 	BfcdInteger apop() {return AS->pop();}
 	BfcdInteger atop() {return AS->_top();}
 
+	//Поиск слова в локальном стэке словарей.
+	void find_word_to_astack(const char* _name);
+
 	// Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
 	// требует постоянной доработки
 	bool is_valid_for_execute(void* fn);
+	// Проверяет что указатель находится в пределах пула
+	bool is_pointer_valid(void* p);
 //---	
+	// Локальный аллокатор потока
 	TAbstractAllocator *allocator;
+	// Глобальный аллокатор VM, используется для проверки валидности указателей.
+	TAbstractAllocator *main_VM_allocator;
 
 	AStack *AS;			// Арифметический стек
 	RStack *RS;			// Стек возврата	
@@ -132,6 +147,7 @@ struct VMThreadData
 	// Входной поток
 	BfcdInteger STDIN, STDOUT, STDERR;
 	BfcdInteger TIB_SIZE;
+	bool use_tty;
 	char* tib;
 	BfcdInteger tib_index;
 	BfcdInteger tib_length;
@@ -140,7 +156,9 @@ struct VMThreadData
 	BfcdInteger digit_base;
 
 	// Список _всех_ словарей - общий для всех потоков.
-	TStack<Vocabulary*> *vocs;
+	VocabularyStack* vocs;
+	// Локальный для потока порядок поиска в словарях. 
+	VocabularyStack* local_vocs_order;
 };
 
 #define defword(NAME) bool f_##NAME(VMThreadData *data)
@@ -166,6 +184,14 @@ defword(get);		// @
 defword(put);		// !
 defword(bye);		// BYE
 defword(execute);	// EXECUTE
+
+//********************************************************** Слова
+//работы со словарем и входным буффером
+defword(find);		// FIND
+defword(read_tib);	// read>tib - чтение из входного потока в TIB ( -- )
+defword(tib);		// TIB
+defword(tib_index);	// >IN
+defword(tib_length);// #TIB
 
 #endif //FORTH_H
 

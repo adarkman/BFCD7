@@ -1,5 +1,7 @@
 #include "forth.h"
 #include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 /*
  * VM Error Messages
@@ -85,27 +87,48 @@ Vocabulary::FindResult Vocabulary::find_all_chain(TYPE _name) \
 find_all_chain_T(const char*);
 find_all_chain_T(StringHash::UID);
 
+bool Vocabulary::check_CFA(BFCD_OP cfa)
+{
+	Vocabulary* curr = this;
+	while(curr)
+	{
+		WordHeader* wh = curr->last;
+		while(wh)
+		{
+			if(wh->CFA == cfa) return true;
+			wh = wh->prev;
+		}
+		curr = curr->prev;
+	}
+	return false;
+}
 /*
  * VMThreadData
  */
 VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP,
-				 BfcdInteger _tib_size):
+				 TAbstractAllocator* _main_VM_allocator,
+				 BfcdInteger _tib_size,
+				 bool _use_tty,
+				 int _STDIN,
+				 int _STDOUT,
+				 int _STDERR):
 	allocator(_allocator),
+	main_VM_allocator(_main_VM_allocator),
 	vocs(_vocs),
+	local_vocs_order(_vocs),
 	code(_code),
 	IP(start_IP),
 	vm_state(VM_EXECUTE),
-	STDIN(STDIN_FILENO),
-	STDOUT(STDOUT_FILENO),
-	STDERR(STDERR_FILENO),
+	use_tty(_use_tty),
+	STDIN(_STDIN), STDOUT(_STDOUT), STDERR(_STDERR),
 	TIB_SIZE(_tib_size),
 	tib_index(0),
 	tib_length(0)
 {
 	AS=XNEW(allocator,AStack) (allocator);
 	RS=XNEW(allocator,RStack) (allocator);
-	tib=(char*)allocator->malloc(TIB_SIZE);
+	tib=(char*)allocator->malloc(TIB_SIZE+16);
 }
 
 VMThreadData::~VMThreadData()
@@ -121,7 +144,31 @@ VMThreadData::~VMThreadData()
 // требует постоянной доработки
 bool VMThreadData::is_valid_for_execute(void* fn)
 {
+#ifdef __DEBUG__
+	for(int i=1; i<=vocs->_size(); i++)
+		if(vocs->nth(i)->check_CFA((BFCD_OP)fn)) return true;
+	for(int i=1; i<=local_vocs_order->_size(); i++)
+		if(local_vocs_order->nth(i)->check_CFA((BFCD_OP)fn)) return true;
+	return false;
+#endif
 	return true;
+}
+
+void VMThreadData::find_word_to_astack(const char* _name)
+{
+	Vocabulary::FindResult res;
+	for(int i=1; i++; i<=local_vocs_order->_size())
+	{
+		res = local_vocs_order->nth(i)->find_self(_name);
+		if(res.first) break;
+	}
+	apush(res.first?(BfcdInteger)res.second->CFA:(BfcdInteger)_name);
+	apush(res.first);	
+}
+	
+bool VMThreadData::is_pointer_valid(void* p)
+{
+	return main_VM_allocator->is_address_valid(p);
 }
 /*
  * Forth low level words
@@ -208,4 +255,54 @@ defword(execute)
 	}
 	return fn(data);
 }
+
+
+// find
+defword(find)
+{
+	const char* _name = (const char*) data->apop();
+	if(data->is_pointer_valid((void*)_name))
+	{
+		data->find_word_to_astack(_name);
+		return true;
+	}
+	else
+		return false;
+}
+
+// read>tib
+defword(read_tib)
+{
+	data->tib_length = 0;
+	if(!data->use_tty)
+	{
+		data->tib_length = read(data->STDIN,data->tib,data->TIB_SIZE);
+	}
+	else // Read from terminal (interactive mode)
+	{
+		char *s = readline(NULL);
+		data->tib_length = (strlen(s)>data->TIB_SIZE-1) ? data->TIB_SIZE : strlen(s);
+		strncpy (data->tib,s,data->tib_length);
+		add_history(s);
+		free(s);
+	}
+	// Заменяем все вайтспейсы и нули на пробел,
+	// на всяк пож добавляем пробел в конец буфера
+	if(data->tib_length)
+	{
+		int i=0;
+		for (;i<=data->tib_length; i++)
+			if (isspace(data->tib[i] || !data->tib[i])) data->tib[i]=' ';
+		data->tib[data->tib_length+1]=' ';
+		data->tib[data->tib_length+2]='\0';
+	}
+	return true;
+}
+
+// TIB 
+defword(tib) { data->apush((BfcdInteger)data->tib); return true; }
+// >IN
+defword(tib_index) { data->apush(data->tib_index); return true; }
+// #TIB
+defword(tib_length) { data->apush(data->tib_length); return true; }
 
