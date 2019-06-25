@@ -108,6 +108,7 @@ bool Vocabulary::check_CFA(BFCD_OP cfa)
 VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP,
 				 TAbstractAllocator* _main_VM_allocator,
+				 const char* _SYSTEM_ENCODING,
 				 BfcdInteger _tib_size,
 				 bool _use_tty,
 				 int _STDIN,
@@ -120,6 +121,7 @@ VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_voc
 	code(_code),
 	IP(start_IP),
 	vm_state(VM_EXECUTE),
+	SYSTEM_ENCODING(_SYSTEM_ENCODING),
 	use_tty(_use_tty),
 	STDIN(_STDIN), STDOUT(_STDOUT), STDERR(_STDERR),
 	TIB_SIZE(_tib_size),
@@ -129,10 +131,15 @@ VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_voc
 	AS=XNEW(allocator,AStack) (allocator);
 	RS=XNEW(allocator,RStack) (allocator);
 	tib=(char*)allocator->malloc(TIB_SIZE+16);
+	iconv_in = iconv_open("WCHAR_T", SYSTEM_ENCODING);
+	iconv_out = iconv_open(SYSTEM_ENCODING, "WCHAR_T");
+	if (iconv_in == (iconv_t)-1 || iconv_out == (iconv_t)-1) throw IconvInitError();
 }
 
 VMThreadData::~VMThreadData()
 {
+	iconv_close(iconv_in);
+	iconv_close(iconv_out);
 	AS->~AStack();
 	allocator->free(AS);
 	RS->~RStack();
@@ -257,7 +264,7 @@ defword(execute)
 }
 
 
-// find
+// FIND
 defword(find)
 {
 	const char* _name = (const char*) data->apop();
@@ -273,16 +280,18 @@ defword(find)
 // read>tib
 defword(read_tib)
 {
-	data->tib_length = 0;
+	if(data->tib_length > data->TIB_SIZE) // Something WRONG
+		return false;
 	if(!data->use_tty)
 	{
-		data->tib_length = read(data->STDIN,data->tib,data->TIB_SIZE);
+		data->tib_length = read(data->STDIN,&(data->tib[data->tib_length]),data->TIB_SIZE-data->tib_length);
 	}
 	else // Read from terminal (interactive mode)
 	{
 		char *s = readline(NULL);
 		data->tib_length = (strlen(s)>data->TIB_SIZE-1) ? data->TIB_SIZE : strlen(s);
 		strncpy (data->tib,s,data->tib_length);
+		data->tib_index = 0;
 		add_history(s);
 		free(s);
 	}
@@ -305,4 +314,67 @@ defword(tib) { data->apush((BfcdInteger)data->tib); return true; }
 defword(tib_index) { data->apush(data->tib_index); return true; }
 // #TIB
 defword(tib_length) { data->apush(data->tib_length); return true; }
+// (KEY)
+defword(key_internal)
+{
+	char outbuf[SIZEOF_WCHAR_T];
+	char *outbuf_p = outbuf;
+	size_t outbytes=SIZEOF_WCHAR_T;
+	char* inbuf = &(data->tib[data->tib_index]);
+	size_t inbytesleft = data->tib_length - data->tib_index;
+	size_t res = iconv(data->iconv_in,NULL,NULL,NULL,NULL);
+	if(data->tib_index>=data->tib_length)
+	{
+		data->tib_index = 0;
+		if(!f_read_tib(data))
+		{
+			data->apush(0);
+			return false;
+		}
+	}
+	res = iconv (data->iconv_in, &inbuf, &inbytesleft, &outbuf_p, &outbytes);
+	if (res == -1 && errno == EINVAL) // Incomplete multibyte sequence
+	{
+		size_t converted_size = data->tib - inbuf;
+		memmove(data->tib, &data->tib[converted_size], data->tib_length-converted_size);
+		data->tib_index = 0;
+		data->tib_length-=converted_size;
+		f_read_tib(data);
+		data->apush(-1);
+		return false;
+	}
+	else if (res == -1) // Something BAD, errno other than EINVAL
+	{
+		data->apush(0);
+		return false;
+	}
+	// All OK, converted from Local Encoding
+	data->tib_index = data->tib_length-inbytesleft;
+	BfcdInteger i;
+	memmove(&i,outbuf,SIZEOF_WCHAR_T);
+	data->apush(i);
+	return true;
+}
+// KEY
+defword(key)
+{
+	bool res = f_key_internal(data);
+	if (!res) // Convertion failed
+	{
+		BfcdInteger errcode = data->apop();
+		if(errcode == -1) // Incomplete multibyte sequence, TIB renewed, recall convertion
+		{
+			if(!f_key_internal(data)) // Something BAD, convetion failed, errcode already on stack
+				return false;
+		}
+		else // bad errcode
+		{
+			data->apush(0);
+			return false;
+		}
+	}
+	// Convertion success, wchar_t on stack
+	return true;
+}
+
 

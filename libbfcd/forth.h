@@ -14,10 +14,14 @@
 #include <functional> // Инстанциированные темплейты типа std::hash<unsigned int>
 #include <utility>
 #include <unordered_map>
+#include <iconv.h>
 
 // require C11 standart in compiler
 static_assert(sizeof(BfcdInteger) >= sizeof(StringHash::UID),
 	"CELL size < StringHash::UID size. Unsupported configuration.");
+
+static_assert(sizeof(BfcdInteger) >= sizeof(wchar_t),
+			  "CELL size < sizeof(wchar_t). Unsupported configuration.");
 
 /*
  * Заголовок словарной статьи
@@ -107,11 +111,15 @@ typedef TStack<Vocabulary*> VocabularyStack;
 
 enum VM_STATE {VM_EXECUTE=0, VM_COMPILE};
 
+exception (VMDataError, SimpleException);
+exception (IconvInitError, VMDataError);
+
 struct VMThreadData
 {
 	VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP,
 				 TAbstractAllocator* _main_VM_allocator,
+				 const char *_SYSTEM_ENCODING,
 				 BfcdInteger _tib_size=KB(4),
 				 bool _use_tty = false,
 				 int _STDIN = STDIN_FILENO,
@@ -131,6 +139,7 @@ struct VMThreadData
 	bool is_valid_for_execute(void* fn);
 	// Проверяет что указатель находится в пределах пула
 	bool is_pointer_valid(void* p);
+
 //---	
 	// Локальный аллокатор потока
 	TAbstractAllocator *allocator;
@@ -145,12 +154,16 @@ struct VMThreadData
 	BfcdInteger _errno;			// Код ошибки, выставляется в словах
 
 	// Входной поток
+	const char* SYSTEM_ENCODING;
 	BfcdInteger STDIN, STDOUT, STDERR;
 	BfcdInteger TIB_SIZE;
 	bool use_tty;
 	char* tib;
 	BfcdInteger tib_index;
 	BfcdInteger tib_length;
+	// iconv
+	iconv_t iconv_in;
+	iconv_t iconv_out;
 
 	// Основание чисел при парсинге
 	BfcdInteger digit_base;
@@ -192,6 +205,9 @@ defword(read_tib);	// read>tib - чтение из входного потока
 defword(tib);		// TIB
 defword(tib_index);	// >IN
 defword(tib_length);// #TIB
+defword(key_internal);		// (KEY) - символ из TIB, переводит из Local Encoding в WCHAR_T (см. iconv)
+							// самостоятельно вызываться не должен - см. KEY
+defword(key);		// KEY
 
 #endif //FORTH_H
 

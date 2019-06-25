@@ -30,6 +30,13 @@ void BfcdVM::create_base_vocabulary()
 	_("!",put);
 	_("BYE",bye);
 	_("EXECUTE",execute);
+	_("FIND", find);
+	_("read>tib", read_tib);
+	_("TIB", tib);
+	_(">IN",tib_index);
+	_("#TIB",tib_length);
+	_("(KEY)",key_internal);	
+	_("KEY",key);
 }
 #undef _
 
