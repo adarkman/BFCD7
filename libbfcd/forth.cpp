@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <wctype.h>
 
 /*
  * VM Error Messages
@@ -130,7 +131,8 @@ VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_voc
 {
 	AS=XNEW(allocator,AStack) (allocator);
 	RS=XNEW(allocator,RStack) (allocator);
-	tib=(char*)allocator->malloc(TIB_SIZE+16);
+	tib=(char*)allocator->malloc(TIB_SIZE+TIB_PAD);
+	word_buffer=(wchar_t*)allocator->malloc(sizeof(wchar_t)*(TIB_SIZE+TIB_PAD));
 	iconv_in = iconv_open("WCHAR_T", SYSTEM_ENCODING);
 	iconv_out = iconv_open(SYSTEM_ENCODING, "WCHAR_T");
 	if (iconv_in == (iconv_t)-1 || iconv_out == (iconv_t)-1) throw IconvInitError();
@@ -145,6 +147,7 @@ VMThreadData::~VMThreadData()
 	RS->~RStack();
 	allocator->free(RS);
 	allocator->free(tib);
+	allocator->free(word_buffer);
 }
 
 // Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
@@ -185,7 +188,7 @@ bool VMThreadData::is_pointer_valid(void* p)
 // bl
 defword(bl)
 {
-	data->apush(' ');
+	data->apush(L' '); // wchar_t !
 	return true;
 }
 
@@ -285,6 +288,8 @@ defword(read_tib)
 	if(!data->use_tty)
 	{
 		data->tib_length = read(data->STDIN,&(data->tib[data->tib_length]),data->TIB_SIZE-data->tib_length);
+		if(!data->tib_length) // EOF
+			return false;
 	}
 	else // Read from terminal (interactive mode)
 	{
@@ -377,4 +382,54 @@ defword(key)
 	return true;
 }
 
+//WORD
+defword(word)
+{
+	BfcdInteger wbuf_index=0;
+	wmemset(data->word_buffer, 0, data->TIB_SIZE+TIB_PAD);
+	wchar_t delim = (wchar_t)data->apop(); // Разделитель
+	bool start = true;
+	wchar_t wc;
+	while (f_key(data))
+	{
+		wc = data->apop();
+		if (start) // Сбрасываем стартовые разделители
+		{
+			if(delim == L' ' && iswspace(wc)) continue;
+			if(wc == delim) continue;
+			start = false; // Стартовые разделители сброшены
+		}
+		// Забиваем word_buffer пока не встретили разделитель
+		if(wc == delim) // Сразу после предыдущего if разделителя здесь быть не может, 
+						// значит в буфере уже что-то есть, получается мы выделили слово
+		{
+			data->apushp(data->word_buffer);
+			return true;
+		}
+		if(wbuf_index>data->TIB_SIZE) // Кто-то охуел
+		{
+			data->apushp(data->word_buffer);
+			return true;
+		}
+		data->word_buffer[wbuf_index++] = wc;
+	}
+	// Error in KEY
+	data->apop(); // Сбрасываем код возврата KEY
+	if(!data->tib_length) // EOF in read>tib
+	{
+		if(!wbuf_index) // Мы ничего прочитать не смогли - буфер пуст
+		{
+			wcscpy(data->word_buffer,L"BYE"); 
+			wbuf_index = 3;
+		}	
+	}
+	if(wbuf_index) // что-то таки в буфере есть
+	{
+		data->apushp(data->word_buffer);
+		return true;
+	}
+	// Дошли до сюда, значит какая-то ЖОПА
+	data->apushp(data->word_buffer); // пофиг что пустой, может пригодиться
+	return false;
+}
 

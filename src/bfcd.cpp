@@ -8,6 +8,7 @@
 #include <bfcd-vm.h>
 #include <version.h>
 #include <stdio.h>
+#include <locale.h>
 
 void copyright()
 {
@@ -19,6 +20,7 @@ void copyright()
 int main(int argc, char* argv[])
 {
 	copyright();
+	printf("Current locale: %s\n", setlocale(LC_ALL,getenv("LC_ALL")));
 	BfcdVM vm;
 	return 0;
 }

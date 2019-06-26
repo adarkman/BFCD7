@@ -114,6 +114,7 @@ enum VM_STATE {VM_EXECUTE=0, VM_COMPILE};
 exception (VMDataError, SimpleException);
 exception (IconvInitError, VMDataError);
 
+#define TIB_PAD 16
 struct VMThreadData
 {
 	VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
@@ -128,6 +129,7 @@ struct VMThreadData
 	~VMThreadData();
 
 	void apush(BfcdInteger a) {AS->push(a);}
+	void apushp(void* p) {AS->push((BfcdInteger)p);}
 	BfcdInteger apop() {return AS->pop();}
 	BfcdInteger atop() {return AS->_top();}
 
@@ -161,6 +163,7 @@ struct VMThreadData
 	char* tib;
 	BfcdInteger tib_index;
 	BfcdInteger tib_length;
+	wchar_t* word_buffer; // Буфер для WORD;
 	// iconv
 	iconv_t iconv_in;
 	iconv_t iconv_out;
@@ -208,6 +211,7 @@ defword(tib_length);// #TIB
 defword(key_internal);		// (KEY) - символ из TIB, переводит из Local Encoding в WCHAR_T (см. iconv)
 							// самостоятельно вызываться не должен - см. KEY
 defword(key);		// KEY
+defword(word);		// WORD
 
 #endif //FORTH_H
 
