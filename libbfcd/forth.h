@@ -9,7 +9,7 @@
 #define FORTH_H
 
 #include "MemoryManager.h"
-#include "stringhash.h"
+#include "WStringHash.h"
 #include <assert.h>
 #include <functional> // Инстанциированные темплейты типа std::hash<unsigned int>
 #include <utility>
@@ -17,7 +17,7 @@
 #include <iconv.h>
 
 // require C11 standart in compiler
-static_assert(sizeof(BfcdInteger) >= sizeof(StringHash::UID),
+static_assert(sizeof(BfcdInteger) >= sizeof(WStringHash::UID),
 	"CELL size < StringHash::UID size. Unsupported configuration.");
 
 static_assert(sizeof(BfcdInteger) >= sizeof(wchar_t),
@@ -33,9 +33,9 @@ struct Vocabulary;
 struct WordHeader
 {
 	enum Flags {IMMEDIATE=-1};
-	StringHash::UID name;
-	CHAR_P help;
-	CHAR_P source;
+	WStringHash::UID name;
+	WCHAR_P help;
+	WCHAR_P source;
 	int flags;
 	WordHeader* prev;
 	Vocabulary *voc;
@@ -49,23 +49,23 @@ struct WordHeader
  */
 struct Vocabulary
 {
-	Vocabulary (TAbstractAllocator* _alloc, const char* _name);
+	Vocabulary (TAbstractAllocator* _alloc, CONST_WCHAR_P _name);
 	~Vocabulary();
 
-	WordHeader* add_word(const char* _name, BFCD_OP CFA);
+	WordHeader* add_word(CONST_WCHAR_P _name, BFCD_OP CFA);
 
 	typedef std::pair<int, WordHeader*> FindResult;
 	// Поиск только в текущем словаре
-	FindResult find_self(const char* _name); 
-	FindResult find_self(StringHash::UID _name); 
+	FindResult find_self(const WCHAR_P _name); 
+	FindResult find_self(WStringHash::UID _name); 
 	// Поиск в цепочке словарей через this->prev
-	FindResult find_all_chain(const char* _name); 
-	FindResult find_all_chain(StringHash::UID _name); 
+	FindResult find_all_chain(const WCHAR_P _name); 
+	FindResult find_all_chain(WStringHash::UID _name); 
 	// Проверяет наличие слова с нужным CFA в словаре.
 	bool check_CFA(BFCD_OP cfa);
 //---	
 protected:
-	StringHash::UID name;
+	WStringHash::UID name;
 	// Добавление в словарь не потокобезопасно 
 	pthread_mutex_t mutex;
 	// Последнее определённое слово
@@ -76,15 +76,15 @@ protected:
 	TAbstractAllocator* allocator;
 	// Юзаем STL unordered_map в качестве хеш-таблицы и кастомным аллокатором.
 	// (пора подучить современный C++ :/ )
-	typedef STLAllocator<std::pair<const StringHash::UID, WordHeader*>> WordsMapAllocator;
-	typedef std::unordered_map<StringHash::UID,
+	typedef STLAllocator<std::pair<const WStringHash::UID, WordHeader*>> WordsMapAllocator;
+	typedef std::unordered_map<WStringHash::UID,
 				WordHeader*,
-				std::hash<StringHash::UID>,
-				std::equal_to<StringHash::UID>,
+				std::hash<WStringHash::UID>,
+				std::equal_to<WStringHash::UID>,
 				WordsMapAllocator> WordsMap;
 	WordsMapAllocator* stl_allocator;
 	// Хеш имён слов
-	StringHash* names;
+	WStringHash* names;
 	// Собственно список слов в словаре
 	WordsMap* words;
 };
@@ -134,7 +134,7 @@ struct VMThreadData
 	BfcdInteger atop() {return AS->_top();}
 
 	//Поиск слова в локальном стэке словарей.
-	void find_word_to_astack(const char* _name);
+	void find_word_to_astack(const WCHAR_P _name);
 
 	// Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
 	// требует постоянной доработки

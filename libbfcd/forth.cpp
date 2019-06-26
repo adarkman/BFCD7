@@ -16,10 +16,10 @@ const char *VM_Errors[] =
 /*
  * Словарь
  */
-Vocabulary::Vocabulary (TAbstractAllocator* _alloc, const char *_name):
+Vocabulary::Vocabulary (TAbstractAllocator* _alloc, CONST_WCHAR_P _name):
 	allocator(_alloc)
 {
-	names=XNEW(allocator,StringHash) (allocator);
+	names=XNEW(allocator,WStringHash) (allocator);
 	name=names->insert(_name);
 	stl_allocator = XNEW(allocator,WordsMapAllocator) (allocator);
 	words=XNEW(allocator,WordsMap)(0, *stl_allocator);
@@ -28,14 +28,14 @@ Vocabulary::Vocabulary (TAbstractAllocator* _alloc, const char *_name):
 
 Vocabulary::~Vocabulary()
 {
-	names->~StringHash();
+	names->~WStringHash();
 	allocator->free(names);
 	words->~WordsMap();
 	allocator->free(words);
 	pthread_mutex_destroy(&mutex);
 }
 
-WordHeader*	Vocabulary::add_word(const char* _name, BFCD_OP CFA)
+WordHeader*	Vocabulary::add_word(CONST_WCHAR_P _name, BFCD_OP CFA)
 {
 	pthread_mutex_lock(&mutex);
 	WordHeader *wh = XNEW(allocator,WordHeader)();
@@ -46,13 +46,13 @@ WordHeader*	Vocabulary::add_word(const char* _name, BFCD_OP CFA)
 	last = wh;
 	wh->CFA = CFA;
 	//words->push(wh);
-	__CODE(printf("\\ insert '%s' in Vocabulary::words\n", names->get(wh->name)));
+	__CODE(printf("\\ insert '%ls' in Vocabulary::words\n", names->get(wh->name)));
 	(*words)[wh->name] = wh; // Вариант: words->insert(std::make_pair(wh->name,wh));
 	pthread_mutex_unlock(&mutex);
 	return wh;
 }
 
-Vocabulary::FindResult Vocabulary::find_self(const char* _name)
+Vocabulary::FindResult Vocabulary::find_self(const WCHAR_P _name)
 {
 	auto uid = names->find(_name);
 	if(!uid)
@@ -63,7 +63,7 @@ Vocabulary::FindResult Vocabulary::find_self(const char* _name)
 	}
 }
 
-Vocabulary::FindResult Vocabulary::find_self(StringHash::UID _name)
+Vocabulary::FindResult Vocabulary::find_self(WStringHash::UID _name)
 {
 	auto res = words->find(_name);
 	if(res != words->end())
@@ -85,8 +85,8 @@ Vocabulary::FindResult Vocabulary::find_all_chain(TYPE _name) \
 	} \
 	return res; \
 }
-find_all_chain_T(const char*);
-find_all_chain_T(StringHash::UID);
+find_all_chain_T(const WCHAR_P);
+find_all_chain_T(WStringHash::UID);
 
 bool Vocabulary::check_CFA(BFCD_OP cfa)
 {
@@ -164,7 +164,7 @@ bool VMThreadData::is_valid_for_execute(void* fn)
 	return true;
 }
 
-void VMThreadData::find_word_to_astack(const char* _name)
+void VMThreadData::find_word_to_astack(const WCHAR_P _name)
 {
 	Vocabulary::FindResult res;
 	for(int i=1; i++; i<=local_vocs_order->_size())
@@ -270,7 +270,7 @@ defword(execute)
 // FIND
 defword(find)
 {
-	const char* _name = (const char*) data->apop();
+	const WCHAR_P _name = (const WCHAR_P) data->apop();
 	if(data->is_pointer_valid((void*)_name))
 	{
 		data->find_word_to_astack(_name);

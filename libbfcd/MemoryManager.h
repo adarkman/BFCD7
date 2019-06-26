@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <new>
+#include <wchar.h>
 
 struct SimpleException { virtual ~SimpleException() {} virtual char* operator () ()=0;  };
 #define exception(Name,Parent) struct Name: public Parent { char* Name##_name; \
@@ -34,6 +35,7 @@ public:
 	virtual CELL malloc(BfcdInteger)=0;
 	virtual void free(CELL)=0;
 	virtual char* strdup(const char*)=0;
+	virtual wchar_t* wstrdup(const wchar_t*)=0;
 	virtual CELL code_alloc(BfcdInteger size)=0;
 	virtual bool is_address_valid(void*) {return true;}
 
@@ -50,6 +52,7 @@ public:
 	virtual CELL malloc(BfcdInteger size) {return ::malloc(size);}
 	virtual void free(CELL ptr) {return ::free(ptr);}
 	virtual char* strdup(const char*s) {return ::strdup(s);}
+	virtual wchar_t* wstrdup(const wchar_t *s) {return ::wcsdup(s);}
 	virtual CELL code_alloc(BfcdInteger size) {return NULL;}
 	virtual ~SystemAllocator() {}
 };
@@ -203,6 +206,7 @@ public:
 	virtual bool is_address_valid(void* p);
 
 	virtual char* strdup(const char* s);
+	virtual wchar_t* wstrdup(const wchar_t* s);
 
 	// Code allocation
 	virtual CELL code_alloc(BfcdInteger size);
@@ -238,6 +242,7 @@ public:
 	virtual CELL malloc(BfcdInteger size);
 	virtual void free(CELL ptr);
 	virtual char* strdup(const char* s);
+	virtual wchar_t* wstrdup(const wchar_t* s);
 	virtual CELL code_alloc(BfcdInteger size);
 
 protected:

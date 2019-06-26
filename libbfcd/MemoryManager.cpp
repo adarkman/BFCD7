@@ -94,6 +94,13 @@ char* MemoryManager::strdup(const char* s)
     return ds;
 }
 
+wchar_t* MemoryManager::wstrdup(const wchar_t* s)
+{
+    wchar_t* ds = (wchar_t*) this->malloc((wcslen(s)+1)*sizeof(wchar_t));
+    wcscpy(ds, s);
+    return ds;
+}
+
 CELL MemoryManager::code_alloc(BfcdInteger size)
 {
 	void* ptr = ((char*)base)+code_head;
@@ -213,6 +220,13 @@ char* SubPool::strdup(const char* s)
 {
     char* ds = (char*) this->malloc(strlen(s)+1);
     strcpy(ds, s);
+    return ds;
+}
+
+wchar_t* SubPool::wstrdup(const wchar_t* s)
+{
+    wchar_t* ds = (wchar_t*) this->malloc((wcslen(s)+1)*sizeof(wchar_t));
+    wcscpy(ds, s);
     return ds;
 }
 
