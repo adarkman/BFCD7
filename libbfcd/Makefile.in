@@ -36,7 +36,7 @@ BFCD_SHARE_DIR=@datarootdir@/bfcd7
 CADDFLAGS=@CFLAGS@
 INCLUDE_DIRS=-I/usr/local/include
 WARN_FLAGS=-Wno-unused-result -fpermissive
-CCFLAGS=-std=c++17 -O2 -fPIC -pthread $(INCLUDE_DIRS) $(CFLAGS) -DDATA_DIR=\"$(BFCD_DATA_DIR)/\" \
+CCFLAGS=-std=c++17 -g -O2 -fPIC -pthread $(INCLUDE_DIRS) $(CFLAGS) -DDATA_DIR=\"$(BFCD_DATA_DIR)/\" \
 	-DBASE_COMPILER=\"$(BFCD_DATA_DIR)/$(NAME)\" -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS) $(WARN_FLAGS)
 
 CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \

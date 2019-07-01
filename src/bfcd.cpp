@@ -9,6 +9,7 @@
 #include <version.h>
 #include <stdio.h>
 #include <locale.h>
+#include <errno.h>
 
 void copyright()
 {
@@ -19,9 +20,17 @@ void copyright()
 
 int main(int argc, char* argv[])
 {
-	copyright();
-	printf("Current locale: %s\n", setlocale(LC_ALL,getenv("LC_ALL")));
-	BfcdVM vm;
+	//try
+	{
+		copyright();
+		printf("Current locale: %s\n", setlocale(LC_ALL,getenv("LC_ALL")));
+		BfcdVM vm;
+		vm.run();
+	}
+	/*catch(SimpleException &ex)
+	{
+		printf("At TOP level:\n\tException: %s\n\t_errno: %s\n", ex(), strerror(errno));
+	}*/
 	return 0;
 }
 

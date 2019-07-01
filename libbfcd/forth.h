@@ -117,7 +117,8 @@ exception (IconvInitError, VMDataError);
 #define TIB_PAD 16
 struct VMThreadData
 {
-	VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
+	VMThreadData(CONST_WCHAR_P _name,
+				 TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP, CELL _here,
 				 TAbstractAllocator* _main_VM_allocator,
 				 const char *_SYSTEM_ENCODING,
@@ -151,6 +152,8 @@ struct VMThreadData
 	wchar_t* process_str(wchar_t* s);
 
 //---	
+	// Имя потока
+	CONST_WCHAR_P name;
 	// Локальный аллокатор потока
 	TAbstractAllocator *allocator;
 	// Глобальный аллокатор VM, используется для проверки валидности указателей.
@@ -241,7 +244,9 @@ defword(base);		// BASE
 defword(number);	// NUMBER 
 defword(lit);		// LIT - кладём на стек число лежащее сразу за собой в коде
 defword(literal);	// LITERAL
+defword(print_stack);		// .STACK
 defword(step);		// STEP - один шаг интерпретатора					
+defword(interpret);	// INTERPRET
 
 #endif //FORTH_H
 

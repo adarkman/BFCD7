@@ -27,7 +27,7 @@ BFCD_LIB_DIR=@datadir@/bfcd3/lib
 BFCD_SHARE_DIR=@datarootdir@/bfcd7
 
 CADDFLAGS=@CFLAGS@
-CCFLAGS=-O2 -I../libbfcd -I/usr/local/include $(CFLAGS) -DDATA_DIR=\"$(BFCD_LIB_DIR)/\" \
+CCFLAGS=-g -O2 -I../libbfcd -I/usr/local/include $(CFLAGS) -DDATA_DIR=\"$(BFCD_LIB_DIR)/\" \
 	-DBASE_COMPILER=\"$(BFCD_LIB_DIR)/$(NAME)\" -DINTELCC -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS)
 
 CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \

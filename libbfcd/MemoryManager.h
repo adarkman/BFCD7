@@ -211,6 +211,8 @@ public:
 	// Code allocation
 	virtual CELL code_alloc(BfcdInteger size);
 
+	// base address
+	CELL _base() {return base;}
 private:
 	bool createDataFile(BfcdInteger _vm_data_size);
 

@@ -106,7 +106,8 @@ bool Vocabulary::check_CFA(BFCD_OP cfa)
 /*
  * VMThreadData
  */
-VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
+VMThreadData::VMThreadData(CONST_WCHAR_P _name,
+				 TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP, CELL _here,
 				 TAbstractAllocator* _main_VM_allocator,
 				 const char* _SYSTEM_ENCODING,
@@ -116,6 +117,7 @@ VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_voc
 				 int _STDIN,
 				 int _STDOUT,
 				 int _STDERR):
+	name(_name),
 	allocator(_allocator),
 	main_VM_allocator(_main_VM_allocator),
 	vocs(_vocs),
@@ -171,7 +173,7 @@ bool VMThreadData::is_valid_for_execute(void* fn)
 void VMThreadData::find_word_to_astack(CONST_WCHAR_P _name)
 {
 	Vocabulary::FindResult res;
-	for(int i=1; i++; i<=local_vocs_order->_size())
+	for(int i=1; i<=local_vocs_order->_size(); i++)
 	{
 		res = local_vocs_order->nth(i)->find_self(_name);
 		if(res.first) break;
@@ -345,7 +347,8 @@ defword(read_tib)
 	}
 	else // Read from terminal (interactive mode)
 	{
-		char *s = readline(NULL);
+		printf("%ls", data->name);
+		char *s = readline("> ");
 		data->tib_length = (strlen(s)>data->TIB_SIZE-1) ? data->TIB_SIZE : strlen(s);
 		strncpy (data->tib,s,data->tib_length);
 		data->tib_index = 0;
@@ -591,10 +594,21 @@ defword(literal)
 	return true;
 }
 
+// .STACK
+defword(print_stack)
+{
+	if(!data->AS->_size())
+		puts("\t\t\t\t\\ stack empty.");
+	for(int i=1; i<=data->AS->_size(); i++)
+		printf("\t\t\t\t\\ S[%d]: %ld", i, data->AS->nth(i));
+	return true;
+}
+
 // STEP
 #define _do(__code) { if(!f_##__code(data)) return false; } 
 defword(step)
 {
+	if(data->_trace) _do(print_stack);
 	// Считываем слово из входного потока
 	_do(bl);
 	_do(word);
@@ -630,4 +644,22 @@ defword(step)
 	return true;
 }
 #undef _do
+
+// INTERPRET
+defword(interpret)
+{
+	while(true)
+	{
+		if(data->_trace)
+			printf("\t\t\t\t\\ step - Thread: %ls IP: %p\n", data->name, data->IP);
+		if(!f_step(data)) 
+		{
+			printf("\t\t\t\tThread %ls execution error.\n", data->name);
+			if(data->_errno>0 && data->_errno<VM_ERROR_LAST)
+				printf("\t\t\t\t%s\n", VM_Errors[data->_errno]);
+			if(data->_trace) f_print_stack(data);
+			return false;
+		}
+	}
+}
 

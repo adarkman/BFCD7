@@ -16,14 +16,23 @@ public:
 	BfcdVM();
 	~BfcdVM();
 
+	// Запуск
+	void run();
+
 	// Создание базового словаря для нового образа
 	void create_base_vocabulary();
+	// Создание главного потока исполнения
+	void create_main_thread();
+	// Запуск главного потока
+	void main_thread_run();
 protected:
 	MemoryManager* allocator;
 	// Базовый словарь
 	Vocabulary* main_voc;
 	// Список всех словарей
-	TStack<Vocabulary*>* vocs;
+	VocabularyStack* vocs;
+	// Главный поток исполнения
+	VMThreadData* main_thread;
 };
 
 #endif //BFCD_VM_H
