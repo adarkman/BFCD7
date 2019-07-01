@@ -21,7 +21,7 @@ BfcdVM::~BfcdVM()
 #define _(name,op) main_voc->add_word(name,f_##op)
 void BfcdVM::create_base_vocabulary()
 {
-	_(L"bl",bl); 
+	_(L"BL",bl); 
 	_(L"?dup",ifdup);
 	_(L"1+",inc);
 	_(L"1-",dec);
@@ -37,7 +37,17 @@ void BfcdVM::create_base_vocabulary()
 	_(L"#TIB",tib_length);
 	_(L"(KEY)",key_internal);	
 	_(L"KEY",key);
+	_(L"EOF",eof);
 	_(L"WORD",word);
+	_(L"ALLOT",allot);
+	_(L",", coma);
+	_(L"S>H", str2here);
+	_(L"malloc", malloc);
+	_(L"BASE", base);
+	_(L"NUMBER", number);
+	_(L"LIT", lit);
+	_(L"LITERAL", literal);
+	_(L"STEP", step);
 }
 #undef _
 

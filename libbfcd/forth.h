@@ -56,7 +56,7 @@ struct Vocabulary
 
 	typedef std::pair<int, WordHeader*> FindResult;
 	// Поиск только в текущем словаре
-	FindResult find_self(const WCHAR_P _name); 
+	FindResult find_self(CONST_WCHAR_P _name); 
 	FindResult find_self(WStringHash::UID _name); 
 	// Поиск в цепочке словарей через this->prev
 	FindResult find_all_chain(const WCHAR_P _name); 
@@ -118,11 +118,12 @@ exception (IconvInitError, VMDataError);
 struct VMThreadData
 {
 	VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
-				 CELL _code, CELL start_IP,
+				 CELL _code, CELL start_IP, CELL _here,
 				 TAbstractAllocator* _main_VM_allocator,
 				 const char *_SYSTEM_ENCODING,
 				 BfcdInteger _tib_size=KB(4),
 				 bool _use_tty = false,
+				 BfcdInteger __trace = 0,
 				 int _STDIN = STDIN_FILENO,
 				 int _STDOUT = STDOUT_FILENO,
 				 int _STDERR = STDERR_FILENO);
@@ -132,15 +133,22 @@ struct VMThreadData
 	void apushp(void* p) {AS->push((BfcdInteger)p);}
 	BfcdInteger apop() {return AS->pop();}
 	BfcdInteger atop() {return AS->_top();}
+	BFCD_OP rpop() {return (BFCD_OP)RS->pop();}
+	void rpush(BFCD_OP p) {RS->push((CELL)p);}
+	BFCD_OP rtop() {return (BFCD_OP)RS->_top();}
 
 	//Поиск слова в локальном стэке словарей.
-	void find_word_to_astack(const WCHAR_P _name);
+	void find_word_to_astack(CONST_WCHAR_P _name);
 
 	// Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
 	// требует постоянной доработки
 	bool is_valid_for_execute(void* fn);
 	// Проверяет что указатель находится в пределах пула
 	bool is_pointer_valid(void* p);
+	// Резервирует память в области кода
+	bool allot(BfcdInteger size);
+	// Обработчик \\ последовательностей в строках
+	wchar_t* process_str(wchar_t* s);
 
 //---	
 	// Локальный аллокатор потока
@@ -150,10 +158,12 @@ struct VMThreadData
 
 	AStack *AS;			// Арифметический стек
 	RStack *RS;			// Стек возврата	
-	CELL IP;				// Instruction Pointer
+	BFCD_OP IP;				// Instruction Pointer
 	CELL code;					// Указатель на массив кода
 	BfcdInteger vm_state;		// VM_STATE
 	BfcdInteger _errno;			// Код ошибки, выставляется в словах
+	BfcdInteger _trace;			// Флаг включения трассировки
+	BfcdInteger* here;			// HERE - вершина компиляции
 
 	// Входной поток
 	const char* SYSTEM_ENCODING;
@@ -164,9 +174,12 @@ struct VMThreadData
 	BfcdInteger tib_index;
 	BfcdInteger tib_length;
 	wchar_t* word_buffer; // Буфер для WORD;
+	wchar_t* number_word; // Строка конвертируемая в число. См. NUMBER, &NUMBER
 	// iconv
 	iconv_t iconv_in;
 	iconv_t iconv_out;
+	// База счисления слов при вводе/выводе
+	BfcdInteger base;
 
 	// Основание чисел при парсинге
 	BfcdInteger digit_base;
@@ -188,10 +201,13 @@ protected:
 
 /*
  * Forth low level words
+ *
+ * Большими БУКВАМИ - слова _низкого_ уровня, или работа с входным потоком 
+ *
  */
 //********************************************************** Базовые
 //слова
-defword(bl); 		// bl
+defword(bl); 		// BL
 defword(ifdup); 	// ?dup
 defword(inc);		// 1+
 defword(dec);		// 1-
@@ -211,7 +227,21 @@ defword(tib_length);// #TIB
 defword(key_internal);		// (KEY) - символ из TIB, переводит из Local Encoding в WCHAR_T (см. iconv)
 							// самостоятельно вызываться не должен - см. KEY
 defword(key);		// KEY
+defword(eof);		// EOF
 defword(word);		// WORD
+
+//********************************************************** Компиляция
+//и выделение памяти
+defword(allot);		// ALLOT
+defword(coma);		// ,
+defword(str2here);	// S>H
+defword(malloc);	// malloc - В байтах ! Не в CELL's. 
+					// Освобождение памяти на совести GC аллокатора
+defword(base);		// BASE
+defword(number);	// NUMBER 
+defword(lit);		// LIT - кладём на стек число лежащее сразу за собой в коде
+defword(literal);	// LITERAL
+defword(step);		// STEP - один шаг интерпретатора					
 
 #endif //FORTH_H
 

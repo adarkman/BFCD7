@@ -40,7 +40,7 @@ WordHeader*	Vocabulary::add_word(CONST_WCHAR_P _name, BFCD_OP CFA)
 	pthread_mutex_lock(&mutex);
 	WordHeader *wh = XNEW(allocator,WordHeader)();
 	wh->name = names->insert(_name);
-	__CODE(printf("Vocabulary::add_word %p %x\n",wh, wh->name));
+	//__CODE(printf("Vocabulary::add_word %p %x\n",wh, wh->name));
 	wh->voc = this;
 	wh->prev = last;
 	last = wh;
@@ -52,7 +52,7 @@ WordHeader*	Vocabulary::add_word(CONST_WCHAR_P _name, BFCD_OP CFA)
 	return wh;
 }
 
-Vocabulary::FindResult Vocabulary::find_self(const WCHAR_P _name)
+Vocabulary::FindResult Vocabulary::find_self(CONST_WCHAR_P _name)
 {
 	auto uid = names->find(_name);
 	if(!uid)
@@ -107,11 +107,12 @@ bool Vocabulary::check_CFA(BFCD_OP cfa)
  * VMThreadData
  */
 VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_vocs,
-				 CELL _code, CELL start_IP,
+				 CELL _code, CELL start_IP, CELL _here,
 				 TAbstractAllocator* _main_VM_allocator,
 				 const char* _SYSTEM_ENCODING,
 				 BfcdInteger _tib_size,
 				 bool _use_tty,
+				 BfcdInteger __trace,
 				 int _STDIN,
 				 int _STDOUT,
 				 int _STDERR):
@@ -120,14 +121,17 @@ VMThreadData::VMThreadData(TAbstractAllocator* _allocator, VocabularyStack *_voc
 	vocs(_vocs),
 	local_vocs_order(_vocs),
 	code(_code),
-	IP(start_IP),
+	IP((BFCD_OP)start_IP),
+	here(here),
 	vm_state(VM_EXECUTE),
 	SYSTEM_ENCODING(_SYSTEM_ENCODING),
 	use_tty(_use_tty),
+	_trace(__trace),
 	STDIN(_STDIN), STDOUT(_STDOUT), STDERR(_STDERR),
 	TIB_SIZE(_tib_size),
 	tib_index(0),
-	tib_length(0)
+	tib_length(0),
+	base(10)
 {
 	AS=XNEW(allocator,AStack) (allocator);
 	RS=XNEW(allocator,RStack) (allocator);
@@ -164,7 +168,7 @@ bool VMThreadData::is_valid_for_execute(void* fn)
 	return true;
 }
 
-void VMThreadData::find_word_to_astack(const WCHAR_P _name)
+void VMThreadData::find_word_to_astack(CONST_WCHAR_P _name)
 {
 	Vocabulary::FindResult res;
 	for(int i=1; i++; i<=local_vocs_order->_size())
@@ -179,6 +183,45 @@ void VMThreadData::find_word_to_astack(const WCHAR_P _name)
 bool VMThreadData::is_pointer_valid(void* p)
 {
 	return main_VM_allocator->is_address_valid(p);
+}
+
+bool VMThreadData::allot(BfcdInteger size)
+{
+	if(size<0) return false;
+	try
+	{
+		allocator->code_alloc(size);
+	}
+	catch (VMOutOfMemory &ex)
+	{
+		return false;
+	}
+	return true;
+}
+
+wchar_t* VMThreadData::process_str(wchar_t* s)
+{
+	wchar_t* so=allocator->wstrdup(s);
+	wchar_t* res = so;
+	while(*s)
+	{
+		if(*s==L'\\')
+		{
+			wchar_t c;
+			switch(*(++s))
+			{
+				case 't': c=L'\t'; break;
+				case 'n': c=L'\n'; break;
+				case '\\': c=L'\\'; break;
+				default: break;		  
+			}
+			*so++=c;
+		}
+		else
+			*so++=*s++;
+	}
+	*so=L'\0';
+	return res;
 }
 /*
  * Forth low level words
@@ -263,9 +306,18 @@ defword(execute)
 		data->_errno=VM_SEGFAULT;
 		return false;
 	}
-	return fn(data);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+	data->rpush(data->IP+1); // На стеке возврата адрес слова для исполнения
+							 // после выхода из исполняемого слова
+	data->IP++;						 
+	bool res = fn(data);
+	data->IP = data->rpop(); // Просто использовать 'data->IP++' нельзя -
+							 // слово может модифицировать стек возврата,
+							 // что и делают слова типа EXIT или ?BRANCH
+#pragma GCC diagnostic pop
+	return true;
 }
-
 
 // FIND
 defword(find)
@@ -382,6 +434,12 @@ defword(key)
 	return true;
 }
 
+// EOF
+defword(eof)
+{
+	return f_bye(data);
+}
+
 //WORD
 defword(word)
 {
@@ -432,4 +490,144 @@ defword(word)
 	data->apushp(data->word_buffer); // пофиг что пустой, может пригодиться
 	return false;
 }
+
+// allot
+defword(allot)
+{
+	BfcdInteger count = data->apop();
+	if(data->allot(sizeof(CELL)*count))
+	{
+		data->here+=count;
+		return true;
+	}
+	else
+		return false;
+}
+
+// ,
+defword(coma)
+{
+	data->apush(1);
+	BfcdInteger *p=data->here;
+	if(!f_allot(data)) return false;
+	*p=data->apop();
+	return true;
+}
+
+// S>H
+defword(str2here)
+{
+	wchar_t* s=(wchar_t*)data->apop();
+	if(!data->is_pointer_valid(s)) return false;
+	s=data->process_str(s); 	// Обработка \\, выделенная память остаётся на совести GC аллокатора
+	BfcdInteger size_in_bytes=wcslen(s)*sizeof(wchar_t);
+	// Выделение памяти в коде под строку
+	CELL dst = data->here;
+	data->apush(size_in_bytes/sizeof(CELL)+1);
+	if(!f_allot(data)) return false;
+	// Копирование строки в словарь
+	bzero(dst,size_in_bytes+1);
+	memcpy(dst,s,size_in_bytes);
+	return true;
+}
+
+// malloc
+defword(malloc)
+{
+	void *p = data->allocator->malloc(data->apop());
+	if(!p) return false;
+	data->apushp(p);
+	return true;
+}
+
+// BASE
+defword(base)
+{
+	data->apushp(&data->base);
+	return true;
+}
+
+// NUMBER
+defword(number)
+{
+	wchar_t* end; // Указатель на нечало несконвертированного фрагмента
+	data->number_word = (WCHAR_P)data->apop();
+	BfcdInteger i;
+	if(wcsncmp(data->number_word,L"0x",2)) // Слово в 16-ричной системе. Игнорируем BASE
+		i = wcstol(data->number_word+2, &end, 16);
+	else
+		i = wcstol(data->number_word, &end, data->base);
+	if(end[0]!=L'\0') // '!=', значит что не сконвертировалось (лишние/неправильные символы)
+		return false;
+	data->apush(i);
+	return true;
+}
+
+// LIT
+defword(lit)
+{
+	BfcdInteger* i=(BfcdInteger*)data->rpop(); // Адрес следующего за собой слова,
+											  // см. EXECUTE
+	if(!data->is_pointer_valid(i)) return false;
+	data->apush(*i);
+	// На стек возврата кладётся адрес сразу за извлечённым числом,
+	// EXECUTE занесёт в 'data->IP' уже новый адрес
+	data->rpush((BFCD_OP)++i);
+	return true;
+}
+
+// LITERAL
+defword(literal)
+{
+	if(data->vm_state==VM_COMPILE)
+	{
+		data->find_word_to_astack(L"LIT");
+		if(!data->apop()) // Не нашли, чё за хня ?
+			return false;
+		if(!f_coma(data)) return false; // CFA
+		if(!f_coma(data)) return false; // Сбственно число, оно уже на стеке _перед_ вызовом LITERAL
+	}
+	// VM_EXECUTE - нихрена не делаем, просто оставляем число на стеке
+	return true;
+}
+
+// STEP
+#define _do(__code) { if(!f_##__code(data)) return false; } 
+defword(step)
+{
+	// Считываем слово из входного потока
+	_do(bl);
+	_do(word);
+	if(data->_trace) printf("\t\t\t\t\\ WORD: %ls\n", (WCHAR_P)data->atop());
+	// Ищем его в словаре
+	_do(find);
+	BfcdInteger flags = data->apop();
+	if(flags) // Слово найдено
+	{
+		if(flags==WordHeader::IMMEDIATE)
+			_do(execute) // CFA уже на стеке после FIND
+		else
+			switch (data->vm_state)
+			{
+				case VM_COMPILE: _do(coma); break;		// CFA заносится на вершину HERE,
+								 						// по сути - компиляция
+				case VM_EXECUTE: _do(execute); break;
+				default: return false;					// Прозошла какая-то херня.
+			}
+	}	
+	// Слово не нашли, пробуем парсить как число
+	else
+	{
+		if(!f_number(data))
+		{
+			// Нераспарсилось
+			// TODO: Добавить парсилку как Float/Double (в Форте для этих чисел отдельный стек)
+			return false;
+		}
+		else
+			_do(literal);
+	}
+	return true;
+}
+#undef _do
 
