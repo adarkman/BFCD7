@@ -33,6 +33,8 @@ protected:
 	VocabularyStack* vocs;
 	// Главный поток исполнения
 	VMThreadData* main_thread;
+	// Общие данные потоков
+	TSharedData *shared;
 };
 
 #endif //BFCD_VM_H

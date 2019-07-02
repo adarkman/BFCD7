@@ -102,6 +102,18 @@ enum ErrorCodes
 };
 
 extern const char* VM_Errors[VM_ERROR_LAST];
+
+/*
+ * Общие данные для всех потоков
+ */
+struct TSharedData
+{
+	pthread_mutex_t readline_mutex;
+
+	TSharedData();
+	~TSharedData();
+};
+
 /*
  * Поток исполнения/компиляции BFCD VM
  */
@@ -117,7 +129,7 @@ exception (IconvInitError, VMDataError);
 #define TIB_PAD 16
 struct VMThreadData
 {
-	VMThreadData(CONST_WCHAR_P _name,
+	VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 				 TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP, CELL _here,
 				 TAbstractAllocator* _main_VM_allocator,
@@ -154,6 +166,8 @@ struct VMThreadData
 //---	
 	// Имя потока
 	CONST_WCHAR_P name;
+	// Общие данные всех потоков
+	TSharedData *shared;
 	// Локальный аллокатор потока
 	TAbstractAllocator *allocator;
 	// Глобальный аллокатор VM, используется для проверки валидности указателей.

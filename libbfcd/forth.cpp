@@ -103,10 +103,24 @@ bool Vocabulary::check_CFA(BFCD_OP cfa)
 	}
 	return false;
 }
+
+/*
+ * Общие данные для всех потоков
+ */
+TSharedData::TSharedData()
+{
+	pthread_mutex_init(&readline_mutex,NULL);
+}
+
+TSharedData::~TSharedData()
+{
+	pthread_mutex_destroy(&readline_mutex);
+}
+
 /*
  * VMThreadData
  */
-VMThreadData::VMThreadData(CONST_WCHAR_P _name,
+VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 				 TAbstractAllocator* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP, CELL _here,
 				 TAbstractAllocator* _main_VM_allocator,
@@ -118,6 +132,7 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name,
 				 int _STDOUT,
 				 int _STDERR):
 	name(_name),
+	shared(_shared),
 	allocator(_allocator),
 	main_VM_allocator(_main_VM_allocator),
 	vocs(_vocs),
@@ -348,11 +363,13 @@ defword(read_tib)
 	else // Read from terminal (interactive mode)
 	{
 		printf("%ls", data->name);
+		pthread_mutex_lock(&data->shared->readline_mutex);
 		char *s = readline("> ");
+		if(s) add_history(s);
+		pthread_mutex_unlock(&data->shared->readline_mutex);
 		data->tib_length = (strlen(s)>data->TIB_SIZE-1) ? data->TIB_SIZE : strlen(s);
 		strncpy (data->tib,s,data->tib_length);
 		data->tib_index = 0;
-		add_history(s);
 		free(s);
 	}
 	// Заменяем все вайтспейсы и нули на пробел,

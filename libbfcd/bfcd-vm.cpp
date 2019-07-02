@@ -7,6 +7,7 @@ BfcdVM::BfcdVM()
 	vocs = XNEW(allocator,TStack<Vocabulary*>)(allocator);
 	vocs->push(main_voc);
 	create_base_vocabulary();
+	shared = XNEW(allocator,TSharedData)();
 	create_main_thread();	
 }
 
@@ -28,7 +29,7 @@ void BfcdVM::run()
 
 void BfcdVM::create_main_thread()
 {
-	main_thread = XNEW(allocator,VMThreadData)(L"BFCD",
+	main_thread = XNEW(allocator,VMThreadData)(L"BFCD", shared,
 				 allocator, vocs,
 				 allocator->_base(), // _code, 
 				 allocator->_base(), // start_IP, 
