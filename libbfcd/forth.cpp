@@ -391,6 +391,7 @@ defword(key_internal)
 			data->apush(0);
 			return false;
 		}
+		// Перечитали буфер - перерасчитываем входные данные для iconv
 		inbuf = &(data->tib[data->tib_index]);
 		inbytesleft = data->tib_length - data->tib_index;
 	}
