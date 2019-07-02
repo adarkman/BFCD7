@@ -318,7 +318,7 @@ defword(execute)
 							 // слово может модифицировать стек возврата,
 							 // что и делают слова типа EXIT или ?BRANCH
 #pragma GCC diagnostic pop
-	return true;
+	return res;
 }
 
 // FIND
@@ -409,7 +409,7 @@ defword(key_internal)
 										 	// остаток в TIB и вызывает E2BIG 
 	else if (res == -1) // Something BAD, errno other than EINVAL || E2BIG
 	{
-		if(data->_trace) printf("\t\t\t\t\\ f_key_internal: %s\n", strerror(errno));
+		if(data->_trace) printf("\t\t\t\tf_key_internal: %s\n", strerror(errno));
 		data->apush(0);
 		return false;
 	}
@@ -603,9 +603,9 @@ defword(literal)
 defword(print_stack)
 {
 	if(!data->AS->_size())
-		puts("\t\t\t\t\\ stack empty.");
+		puts("\t\t\t\t| stack empty.");
 	for(int i=1; i<=data->AS->_size(); i++)
-		printf("\t\t\t\t\\ S[%d]: %lx\n", i, data->AS->nth(i));
+		printf("\t\t\t\t| S[%d]: %lx %ld\n", i, data->AS->nth(i), data->AS->nth(i));
 	return true;
 }
 
@@ -617,7 +617,7 @@ defword(step)
 	// Считываем слово из входного потока
 	_do(bl);
 	_do(word);
-	if(data->_trace) printf("\t\t\t\t\\ WORD: %ls\n", (WCHAR_P)data->atop());
+	if(data->_trace) printf("\t\t\t\t| WORD: %ls\n", (WCHAR_P)data->atop());
 	// Ищем его в словаре
 	_do(find);
 	BfcdInteger flags = data->apop();
@@ -656,15 +656,52 @@ defword(interpret)
 	while(true)
 	{
 		if(data->_trace)
-			printf("\t\t\t\t\\ step - Thread: %ls IP: %p\n", data->name, data->IP);
-		if(!f_step(data)) 
+			printf("\t\t\t\t| step - Thread: \"%ls\" IP: %p\n", data->name, data->IP);
+		try
 		{
-			printf("\t\t\t\tThread %ls execution error.\n", data->name);
-			if(data->_errno>0 && data->_errno<VM_ERROR_LAST)
-				printf("\t\t\t\t%s\n", VM_Errors[data->_errno]);
-			if(data->_trace) f_print_stack(data);
+			if(!f_step(data)) 
+			{
+				switch(data->_errno)
+				{
+					case VM_TERMINATE_THREAD:
+						if(data->_trace) printf("\t\t\t\t| Terminating thread \"%ls\".\n", data->name);
+						return true;
+					default:
+						printf("\t\t\t\tThread \"%ls\" execution error.\n", data->name);
+						if(data->_errno>0 && data->_errno<VM_ERROR_LAST)
+							printf("\t\t\t\t%s\n", VM_Errors[data->_errno]);
+						if(data->_trace) f_print_stack(data);
+						return false;
+				}
+			}
+		}
+		catch (SimpleException &ex)
+		{
+			printf("\t\t\t\tError in thread \"%ls\": %s\n", data->name, ex());
 			return false;
 		}
 	}
+}
+
+// .
+defword(print)
+{
+	char s[256];
+	lltoa(data->apop(), s, data->base);
+	write(data->STDOUT, s, strlen(s));
+	return true;
+}
+
+// cr
+defword(cr)
+{
+	write(data->STDOUT, "\n", 1);
+	return true;
+}
+
+defword(plus)
+{
+	data->apush(data->apop()+data->apop());
+	return true;
 }
 

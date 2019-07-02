@@ -10,12 +10,16 @@
 #ifndef __ITOA_H__
 #define __ITOA_H__
 
+#include <wchar.h>
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 	
 char* itoa(int value,char *s,unsigned radix);
+char* lltoa(long long int value,char *s,unsigned radix);
+wchar_t* lltowcs(long long int value,wchar_t *s,unsigned radix);
 char* utoa(unsigned value,char *s,unsigned radix); 
 
 #ifdef __cplusplus

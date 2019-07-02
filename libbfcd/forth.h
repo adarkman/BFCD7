@@ -248,6 +248,11 @@ defword(print_stack);		// .STACK
 defword(step);		// STEP - один шаг интерпретатора					
 defword(interpret);	// INTERPRET
 
+//********************************************************** Мелочи для тестирования
+defword(print);		// .
+defword(cr);		// cr
+defword(plus);		// +
+
 #endif //FORTH_H
 
 

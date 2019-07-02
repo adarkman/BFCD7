@@ -82,6 +82,9 @@ void BfcdVM::create_base_vocabulary()
 	_(L".STACK", print_stack);
 	_(L"STEP", step);
 	_(L"INTERPRET", interpret);
+	_(L".", print);
+	_(L"cr", cr);
+	_(L"+", plus);
 }
 #undef _
 
