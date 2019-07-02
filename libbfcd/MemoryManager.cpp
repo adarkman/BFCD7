@@ -84,7 +84,7 @@ void MemoryManager::free(CELL ptr)
 
 bool MemoryManager::is_address_valid(void* p)
 {
-	return (base>=p) && (((char*)base)+vm_code_size+vm_data_size)<(char*)p;
+	return (base<=p) && (((char*)base)+vm_code_size+vm_data_size)>(char*)p;
 }
 
 char* MemoryManager::strdup(const char* s)

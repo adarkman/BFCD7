@@ -362,8 +362,8 @@ defword(read_tib)
 		int i=0;
 		for (;i<=data->tib_length; i++)
 			if (isspace(data->tib[i] || !data->tib[i])) data->tib[i]=' ';
-		data->tib[data->tib_length+1]=' ';
-		data->tib[data->tib_length+2]='\0';
+		data->tib[data->tib_length++]=' ';
+		data->tib[data->tib_length]='\0';
 	}
 	return true;
 }
@@ -391,6 +391,8 @@ defword(key_internal)
 			data->apush(0);
 			return false;
 		}
+		inbuf = &(data->tib[data->tib_index]);
+		inbytesleft = data->tib_length - data->tib_index;
 	}
 	res = iconv (data->iconv_in, &inbuf, &inbytesleft, &outbuf_p, &outbytes);
 	if (res == -1 && errno == EINVAL) // Incomplete multibyte sequence
@@ -403,8 +405,11 @@ defword(key_internal)
 		data->apush(-1);
 		return false;
 	}
-	else if (res == -1) // Something BAD, errno other than EINVAL
+	else if (res == -1 && errno == E2BIG); // Всё нормально, мы обрабатываем только один символ
+										 	// остаток в TIB и вызывает E2BIG 
+	else if (res == -1) // Something BAD, errno other than EINVAL || E2BIG
 	{
+		if(data->_trace) printf("\t\t\t\t\\ f_key_internal: %s\n", strerror(errno));
 		data->apush(0);
 		return false;
 	}
@@ -556,7 +561,7 @@ defword(number)
 	wchar_t* end; // Указатель на нечало несконвертированного фрагмента
 	data->number_word = (WCHAR_P)data->apop();
 	BfcdInteger i;
-	if(wcsncmp(data->number_word,L"0x",2)) // Слово в 16-ричной системе. Игнорируем BASE
+	if(!wcsncmp(data->number_word,L"0x",2)) // Слово в 16-ричной системе. Игнорируем BASE
 		i = wcstol(data->number_word+2, &end, 16);
 	else
 		i = wcstol(data->number_word, &end, data->base);
@@ -600,7 +605,7 @@ defword(print_stack)
 	if(!data->AS->_size())
 		puts("\t\t\t\t\\ stack empty.");
 	for(int i=1; i<=data->AS->_size(); i++)
-		printf("\t\t\t\t\\ S[%d]: %ld", i, data->AS->nth(i));
+		printf("\t\t\t\t\\ S[%d]: %lx\n", i, data->AS->nth(i));
 	return true;
 }
 
