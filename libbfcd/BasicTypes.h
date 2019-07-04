@@ -16,6 +16,11 @@ typedef int BfcdInteger int;
 #else
 #error "Unsupported Integer size."
 #endif
+
+#if SIZEOF_LONG_LONG < 4 // UTF-8 maximum 4 bytes long https://stijndewitt.com/2014/08/09/max-bytes-in-a-utf-8-char/
+#error "Unsupported Integer size - can not hold UTF-8 character."
+#endif
+
 const unsigned CELL_SIZE = SIZEOF_INTP;
 typedef void* CELL;
 typedef wchar_t* WCHAR_P; 

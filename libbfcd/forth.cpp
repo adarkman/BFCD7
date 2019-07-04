@@ -240,6 +240,14 @@ wchar_t* VMThreadData::process_str(wchar_t* s)
 	*so=L'\0';
 	return res;
 }
+
+bool VMThreadData::create_word(wchar_t* _name)
+{
+	BFCD_OP cfa=(BFCD_OP)here;
+	WordHeader *wh=local_vocs_order->_top()->add_word(_name,cfa);
+	wh->CFA=cfa;
+	return true;
+}
 /*
  * Forth low level words
  */
@@ -666,7 +674,7 @@ defword(step)
 	}
 	return true;
 }
-#undef _do
+//#undef _do
 
 // INTERPRET
 defword(interpret)
@@ -717,9 +725,63 @@ defword(cr)
 	return true;
 }
 
+// +
 defword(plus)
 {
 	data->apush(data->apop()+data->apop());
 	return true;
 }
 
+// >CREATE
+defword(create_from_str)
+{
+	wchar_t* name = (wchar_t*)data->apop();
+	if(!data->is_pointer_valid(name)) return false;
+	return data->create_word(name);
+}
+
+// CREATE
+defword(create)
+{
+	_do(bl);
+	_do(word);
+	_do(create_from_str);
+	return true;
+}
+
+// C>LOCALE
+defword(char_to_locale)
+{
+	char outbuf[sizeof(BfcdInteger)];
+	char *outbuf_p = outbuf;
+	size_t outbytesleft=sizeof(BfcdInteger);
+	wchar_t inbuf = (wchar_t)data->apop();
+	char* inbuf_p=(char*)&inbuf;
+	size_t inbytesleft = SIZEOF_WCHAR_T;
+	size_t res = iconv(data->iconv_out,NULL,NULL,NULL,NULL);
+	res = iconv (data->iconv_out, &inbuf_p, &inbytesleft, &outbuf_p, &outbytesleft);
+	if (res == -1) // Error in convertion
+	{
+		return false;
+	}
+	// All OK, converted to Local Encoding
+	BfcdInteger i=0;
+	BfcdInteger len=sizeof(BfcdInteger)-outbytesleft;
+	memmove(&i,outbuf,len);
+	//printf("%d %d\n", inbytesleft, len);
+	data->apush(i);
+	data->apush(len);
+	return true;
+}
+
+// emit
+defword(emit)
+{
+	_do(char_to_locale);
+	BfcdInteger len = data->apop();
+	BfcdInteger packed = data->apop();
+	if(len>sizeof(packed)) // Вообще-то этого не должно случиться, так - перестраховка
+		return false;
+	write(data->STDOUT,&packed,len);
+	return true;
+}

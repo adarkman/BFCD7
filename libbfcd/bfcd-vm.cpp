@@ -86,6 +86,10 @@ void BfcdVM::create_base_vocabulary()
 	_(L".", print);
 	_(L"cr", cr);
 	_(L"+", plus);
+	_(L">CREATE",create_from_str);
+	_(L"CREATE",create);
+	_(L"C>LOCALE", char_to_locale);
+	_(L"emit", emit);
 }
 #undef _
 

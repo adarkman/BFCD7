@@ -163,6 +163,9 @@ struct VMThreadData
 	// Обработчик \\ последовательностей в строках
 	wchar_t* process_str(wchar_t* s);
 
+	// Создание слова
+	bool create_word(wchar_t* _name);
+
 //---	
 	// Имя потока
 	CONST_WCHAR_P name;
@@ -266,6 +269,14 @@ defword(interpret);	// INTERPRET
 defword(print);		// .
 defword(cr);		// cr
 defword(plus);		// +
+
+//********************************************************** Создание слов
+defword(create_from_str);		// >CREATE
+defword(create);				// CREATE
+defword(char_to_locale);		// C>LOCALE ( wchar_t -- local_char_as_bytes length_in_bytes )
+									// байты упакованы прямо внутри значения на стеке,
+									// благо sizeof(BfcdInteger) должно хватать даже для упаковки UTF-8 символа
+defword(emit);					// emit 
 
 #endif //FORTH_H
 
