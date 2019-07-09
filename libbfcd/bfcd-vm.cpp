@@ -33,7 +33,7 @@ void BfcdVM::create_main_thread()
 				 allocator, vocs,
 				 allocator->_base(), // _code, 
 				 allocator->_base(), // start_IP, 
-				 allocator->_base(), // _here,
+				 allocator->_code_head(), // _here,
 				 allocator, // _main_VM_allocator,
 				 "UTF-8", // _SYSTEM_ENCODING,
 				 KB(4), // _tib_size=KB(4)
@@ -51,7 +51,8 @@ void BfcdVM::main_thread_run()
 	f_execute(main_thread);
 }
 
-#define _(name,op) main_voc->add_word(name,f_##op)
+#define _(name,op) main_voc->_add_binary_word(name,f_##op)
+#define _F(name,op,flags) main_voc->_add_binary_word(name,f_##op,flags)
 void BfcdVM::create_base_vocabulary()
 {
 	_(L"BL",bl); 
@@ -62,6 +63,7 @@ void BfcdVM::create_base_vocabulary()
 	_(L"@",get);	
 	_(L"!",put);
 	_(L"BYE",bye);
+	_(L"(EXEC)", exec);
 	_(L"EXECUTE",execute);
 	_(L"FIND", find);
 	_(L"read>tib", read_tib);
@@ -74,6 +76,7 @@ void BfcdVM::create_base_vocabulary()
 	_(L"WORD",word);
 	_(L"ALLOT",allot);
 	_(L",", coma);
+	_(L"CODE,", ccoma);
 	_(L"S>H", str2here);
 	_(L"malloc", malloc);
 	_(L"BASE", base);
@@ -81,6 +84,7 @@ void BfcdVM::create_base_vocabulary()
 	_(L"LIT", lit);
 	_(L"LITERAL", literal);
 	_(L".STACK", print_stack);
+	_(L".RSTACK", print_rstack);
 	_(L"STEP", step);
 	_(L"INTERPRET", interpret);
 	_(L".", print);
@@ -90,6 +94,13 @@ void BfcdVM::create_base_vocabulary()
 	_(L"CREATE",create);
 	_(L"C>LOCALE", char_to_locale);
 	_(L"emit", emit);
+	_F(L"[", state_compile, WordHeader::IMMEDIATE);
+	_(L"]", state_execute);
+	_(L"EXIT", exit);
+	_(L":", dcolon);
+	_F(L";", word_end_def, WordHeader::IMMEDIATE);
+	_(L"DECOMPILE", decompile);
+	_(L"TRACE", trace);
 }
 #undef _
 

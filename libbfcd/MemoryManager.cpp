@@ -110,6 +110,11 @@ CELL MemoryManager::code_alloc(BfcdInteger size)
 	return ptr;
 }
 
+CELL MemoryManager::_code_head()
+{
+	return ((char*)base)+code_head;
+}
+
 //************************************************************ Private
 bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
 {
@@ -237,5 +242,10 @@ CELL SubPool::code_alloc(BfcdInteger size)
 	if (size % sizeof(CELL) != 0) { code_head += sizeof(CELL) - size; }
 	if(code_head>code_size) throw VMOutOfMemory();
 	return ptr;
+}
+
+CELL SubPool::_code_head()
+{
+	return ((char*)base)+code_head;
 }
 

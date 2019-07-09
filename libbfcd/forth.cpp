@@ -35,21 +35,45 @@ Vocabulary::~Vocabulary()
 	pthread_mutex_destroy(&mutex);
 }
 
-WordHeader*	Vocabulary::add_word(CONST_WCHAR_P _name, BFCD_OP CFA)
+WordHeader*	Vocabulary::_add_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger _flags, bool is_forth) 
 {
 	pthread_mutex_lock(&mutex);
-	WordHeader *wh = XNEW(allocator,WordHeader)();
-	wh->name = names->insert(_name);
+	// WordHeader аллоцируется прямо в коде - так проще доступаться к нему имея CFA,
+	// т.к. CFA получается сразу после WordHeader, как раз WordHeader::CFA на него и ссылается
+	// (косвенный шитый код)
+	WordHeader *wh = new(allocator->code_alloc(sizeof(WordHeader))) WordHeader();
+	wh->name = names->insert(_name); //UID
 	//__CODE(printf("Vocabulary::add_word %p %x\n",wh, wh->name));
 	wh->voc = this;
 	wh->prev = last;
-	last = wh;
-	wh->CFA = CFA;
-	//words->push(wh);
+	last = wh; // Последнее определённое слово
+	wh->CFA = (BFCD_OP*)allocator->_code_head(); // Для форт-слов CFA указывает на область сразу за WordHeader
+	wh->flags = _flags;
+	wh->forth = is_forth; // Форт-слова и бинарные слова исполняются по разному, см. связку EXECUTE<->(EXEC)
+	if(!wh->forth) // Binary word
+	{
+		wh->CFA=(BFCD_OP*)allocator->code_alloc(sizeof(BFCD_OP));
+		*wh->CFA=CFA;
+	}
+	//
 	__CODE(printf("\\ insert '%ls' in Vocabulary::words\n", names->get(wh->name)));
+	// WordHeader в словарь
 	(*words)[wh->name] = wh; // Вариант: words->insert(std::make_pair(wh->name,wh));
+	//
 	pthread_mutex_unlock(&mutex);
 	return wh;
+}
+
+WordHeader* Vocabulary::cfa2wh(BFCD_OP* CFA)
+{
+	char *p=(char*)CFA;
+	WordHeader* wh = (WordHeader*) (p-sizeof(WordHeader)); // Минус, не ->
+	return wh->MARK==WH_MARK?wh:NULL; // Проверяем что смотрим на корректный WordHeader
+}
+
+WordHeader*	Vocabulary::_add_binary_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger _flags)
+{
+	return _add_word(_name, CFA, _flags, false);
 }
 
 Vocabulary::FindResult Vocabulary::find_self(CONST_WCHAR_P _name)
@@ -72,7 +96,7 @@ Vocabulary::FindResult Vocabulary::find_self(WStringHash::UID _name)
 		return FindResult(0,NULL);
 }
 
-// Я тупой и не знаю как это оформить шаблоном не создавая шаблонный класс
+// Я тупой и не знаю как это оформить шаблоном не создавая отдельный шаблонный класс
 #define find_all_chain_T(TYPE) \
 Vocabulary::FindResult Vocabulary::find_all_chain(TYPE _name) \
 { \
@@ -96,7 +120,7 @@ bool Vocabulary::check_CFA(BFCD_OP cfa)
 		WordHeader* wh = curr->last;
 		while(wh)
 		{
-			if(wh->CFA == cfa) return true;
+			if(*wh->CFA == cfa) return true;
 			wh = wh->prev;
 		}
 		curr = curr->prev;
@@ -139,7 +163,6 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	local_vocs_order(_vocs),
 	code(_code),
 	IP((BFCD_OP)start_IP),
-	here(here),
 	vm_state(VM_EXECUTE),
 	SYSTEM_ENCODING(_SYSTEM_ENCODING),
 	use_tty(_use_tty),
@@ -148,7 +171,8 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	TIB_SIZE(_tib_size),
 	tib_index(0),
 	tib_length(0),
-	base(10)
+	digit_base(10),
+	last(NULL)
 {
 	AS=XNEW(allocator,AStack) (allocator);
 	RS=XNEW(allocator,RStack) (allocator);
@@ -173,16 +197,23 @@ VMThreadData::~VMThreadData()
 
 // Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
 // требует постоянной доработки
+// TODO: на текущий момент - сломан
 bool VMThreadData::is_valid_for_execute(void* fn)
 {
 #ifdef __DEBUG__
-	for(int i=1; i<=vocs->_size(); i++)
+/*	for(int i=1; i<=vocs->_size(); i++)
 		if(vocs->nth(i)->check_CFA((BFCD_OP)fn)) return true;
 	for(int i=1; i<=local_vocs_order->_size(); i++)
 		if(local_vocs_order->nth(i)->check_CFA((BFCD_OP)fn)) return true;
-	return false;
+	return false;*/
 #endif
 	return true;
+}
+
+const wchar_t* VMThreadData::readableName(WordHeader* wh)
+{
+	if(!wh) return NULL;
+	return wh->voc->getName(wh);
 }
 
 void VMThreadData::find_word_to_astack(CONST_WCHAR_P _name)
@@ -196,7 +227,36 @@ void VMThreadData::find_word_to_astack(CONST_WCHAR_P _name)
 	apush(res.first?(BfcdInteger)res.second->CFA:(BfcdInteger)_name);
 	apush(res.first);	
 }
-	
+
+bool VMThreadData::astack_top2code()
+{
+	BfcdInteger* p=here();
+	if(!allot(sizeof(CELL))) // 1 ALLOT
+		return false;
+	*p=apop();
+	if(_trace>=TRACE_IN_C_WORDS)
+		printf("\t\t\t\t\\ top2code: %p %p %p\n", p, here(), *p);
+	return true;
+}
+
+bool VMThreadData::astack_top_cfa2code()
+{
+	BFCD_OP cfa=(BFCD_OP)apop();
+	if(!is_valid_for_execute((CELL)cfa)) return false;
+	apushp((CELL)cfa);
+	return astack_top2code();
+}
+
+
+bool VMThreadData::compile_call(CONST_WCHAR_P _name)
+{
+	find_word_to_astack(_name);
+	if(!apop()) // Не нашли, чё за хня ?
+		return false;
+	if(!astack_top_cfa2code()) return false; // CFA уже на стеке
+	return true;
+}
+
 bool VMThreadData::is_pointer_valid(void* p)
 {
 	return main_VM_allocator->is_address_valid(p);
@@ -243,9 +303,12 @@ wchar_t* VMThreadData::process_str(wchar_t* s)
 
 bool VMThreadData::create_word(wchar_t* _name)
 {
-	BFCD_OP cfa=(BFCD_OP)here;
-	WordHeader *wh=local_vocs_order->_top()->add_word(_name,cfa);
-	wh->CFA=cfa;
+	//BFCD_OP cfa=(BFCD_OP)here;
+	WordHeader *wh=local_vocs_order->_top()->_add_word(_name,NULL);
+	if(_trace>=TRACE_EXEC)
+		printf("\t\t\t\t\\ CREATE: WH %p CFA %p %p\n", wh, wh->CFA, *wh->CFA);
+	//wh->CFA=cfa;
+	last = wh;
 	return true;
 }
 /*
@@ -293,7 +356,7 @@ defword(state)
 defword(get)
 {
 	BfcdInteger* p = (BfcdInteger*) data->apop();
-	if(!data->allocator->is_address_valid(p))
+	if(!data->is_pointer_valid(p))
 	{
 		data->_errno=VM_SEGFAULT;
 		return false;
@@ -306,7 +369,7 @@ defword(get)
 defword(put)
 {
 	BfcdInteger* p = (BfcdInteger*) data->apop();
-	if(!data->allocator->is_address_valid(p))
+	if(!data->is_pointer_valid(p))
 	{
 		data->_errno=VM_SEGFAULT;
 		return false;
@@ -322,24 +385,67 @@ defword(bye)
 	return false;
 }
 
-// EXECUTE
+// (EXEC)
+defword(exec)
+{
+	// Старт исполнения Форт-слова
+	while(true)
+	{
+		BFCD_OP* fn=(BFCD_OP*)data->IP; // CFA форт слова, IP устанавливатся в EXECUTE
+		if(data->_trace>=TRACE_EXEC)
+			printf("\t\t\t\t*F* %p %p\n", fn, *fn);
+		// Косвенный шитый код, получаем BFCD_OP через **fn; 
+		BFCD_OP* op=(BFCD_OP*)*fn;
+		if(*op==f_exit) break; // EXIT, прерываем цикл, 
+								// поскольку rpush не делается, получается завуалированный rpop
+		//
+		data->apushp((void*)*fn);
+		if(!f_execute(data)) return false; // Да, взаимная рекурсия с EXECUTE
+	}
+	return true;
+}
+
+// EXECUTE ( CFA - )
 defword(execute)
 {
-	BFCD_OP fn=(BFCD_OP)data->apop();
-	if(!data->is_valid_for_execute((void*)fn))
+	BFCD_OP* fn=(BFCD_OP*)data->apop(); // *CFA
+	if(data->_trace>=TRACE_EXEC) 
+		printf("\t\t\t\t*** %p %p\n", fn, *fn);
+#ifdef __DEBUG__	
+	if(!data->is_valid_for_execute((void*)*fn))
 	{
 		data->_errno=VM_SEGFAULT;
 		return false;
 	}
+#endif	
+	if(!data->is_pointer_valid((void*)fn)) // *CFA _должен_ быть в пределах ПУЛА
+		return false;
+	if(data->_trace>=TRACE_EXEC)
+	{
+		WordHeader *wh = Vocabulary::cfa2wh(fn);
+		if(wh)
+			printf("\t\t\t\t*** %ls\n", data->readableName(wh));			
+	}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-arith"
-	data->rpush(data->IP+1); // На стеке возврата адрес слова для исполнения
-							 // после выхода из исполняемого слова
-	data->IP++;						 
-	bool res = fn(data);
+	// ВНИМАТЕЛЬНО с адресной арифметикой, не везде очевидные смещения !
+	data->rpush(data->IP+sizeof(BFCD_OP)); // На стеке возврата адрес следующего слова
+	WordHeader* wh=Vocabulary::cfa2wh(fn);
+	if(!wh) // Не найден WH_MARK -> CFA липовый, во избежание SIGSEGV
+		return false;
+	data->IP = (BFCD_OP)fn; // В случае форт-слова IP:=CFA
+	// .STACK
+	if(data->_trace>=TRACE_STACK_IN_EXEC) f_print_stack(data);
+	if(data->_trace>=TRACE_RSTACK_IN_EXEC) f_print_rstack(data);
+	//
+	bool res = (wh->forth) ? f_exec(data) /*Форт слово*/: (*fn)(data)/*Сишная функция*/;
+	// .STACK
+	if(data->_trace>=TRACE_STACK_IN_EXEC) f_print_stack(data);
+	if(data->_trace>=TRACE_RSTACK_IN_EXEC) f_print_rstack(data);
+	//
 	data->IP = data->rpop(); // Просто использовать 'data->IP++' нельзя -
 							 // слово может модифицировать стек возврата,
-							 // что и делают слова типа EXIT или ?BRANCH
+							 // что и делают слова типа LIT или ?BRANCH
 #pragma GCC diagnostic pop
 	return res;
 }
@@ -370,9 +476,10 @@ defword(read_tib)
 	}
 	else // Read from terminal (interactive mode)
 	{
-		printf("%ls", data->name);
+		char prompt[256];
+		snprintf(prompt,255,"%ls%s> ", data->name, data->vm_state==VM_COMPILE?"(COMPILE)":"");
 		pthread_mutex_lock(&data->shared->readline_mutex);
-		char *s = readline("> ");
+		char *s = readline(prompt);
 		if(s) add_history(s);
 		pthread_mutex_unlock(&data->shared->readline_mutex);
 		data->tib_length = (strlen(s)>data->TIB_SIZE-1) ? data->TIB_SIZE : strlen(s);
@@ -407,8 +514,10 @@ defword(key_internal)
 	size_t outbytes=SIZEOF_WCHAR_T;
 	char* inbuf = &(data->tib[data->tib_index]);
 	size_t inbytesleft = data->tib_length - data->tib_index;
-	size_t res = iconv(data->iconv_in,NULL,NULL,NULL,NULL);
-	if(data->tib_index>=data->tib_length)
+	// Инициализация цикла iconv, т.к. конвертируем только один символ
+	// инициализуруем при каждом вызове - в конце функции цикл iconv уже завершён
+	size_t res = iconv(data->iconv_in,NULL,NULL,NULL,NULL); 	
+	if(data->tib_index>=data->tib_length) // TIB вычитан - перезаполняем
 	{
 		data->tib_index = 0;
 		if(!f_read_tib(data))
@@ -435,7 +544,7 @@ defword(key_internal)
 										 	// остаток в TIB и вызывает E2BIG 
 	else if (res == -1) // Something BAD, errno other than EINVAL || E2BIG
 	{
-		if(data->_trace) printf("\t\t\t\tf_key_internal: %s\n", strerror(errno));
+		if(data->_trace>=TRACE_IN_C_WORDS) printf("\t\t\t\tf_key_internal: %s\n", strerror(errno));
 		data->apush(0);
 		return false;
 	}
@@ -530,10 +639,7 @@ defword(allot)
 {
 	BfcdInteger count = data->apop();
 	if(data->allot(sizeof(CELL)*count))
-	{
-		data->here+=count;
 		return true;
-	}
 	else
 		return false;
 }
@@ -541,11 +647,13 @@ defword(allot)
 // ,
 defword(coma)
 {
-	data->apush(1);
-	BfcdInteger *p=data->here;
-	if(!f_allot(data)) return false;
-	*p=data->apop();
-	return true;
+	return data->astack_top2code();
+}
+
+// CODE,
+defword(ccoma)
+{
+	return data->astack_top_cfa2code();
 }
 
 // S>H
@@ -556,7 +664,7 @@ defword(str2here)
 	s=data->process_str(s); 	// Обработка \\, выделенная память остаётся на совести GC аллокатора
 	BfcdInteger size_in_bytes=wcslen(s)*sizeof(wchar_t);
 	// Выделение памяти в коде под строку
-	CELL dst = data->here;
+	CELL dst = data->here();
 	data->apush(size_in_bytes/sizeof(CELL)+1);
 	if(!f_allot(data)) return false;
 	// Копирование строки в словарь
@@ -577,7 +685,7 @@ defword(malloc)
 // BASE
 defword(base)
 {
-	data->apushp(&data->base);
+	data->apushp(&data->digit_base);
 	return true;
 }
 
@@ -590,7 +698,7 @@ defword(number)
 	if(!wcsncmp(data->number_word,L"0x",2)) // Слово в 16-ричной системе. Игнорируем BASE
 		i = wcstol(data->number_word+2, &end, 16);
 	else
-		i = wcstol(data->number_word, &end, data->base);
+		i = wcstol(data->number_word, &end, data->digit_base);
 	if(end[0]!=L'\0') // '!=', значит что не сконвертировалось (лишние/неправильные символы)
 		return false;
 	data->apush(i);
@@ -602,10 +710,12 @@ defword(lit)
 {
 	BfcdInteger* i=(BfcdInteger*)data->rpop(); // Адрес следующего за собой слова,
 											  // см. EXECUTE
+	if(data->_trace>=TRACE_IN_C_WORDS) printf("\t\t\t\t| LIT: %p %lx %ld\n", i,*i,*i);			  
 	if(!data->is_pointer_valid(i)) return false;
 	data->apush(*i);
 	// На стек возврата кладётся адрес сразу за извлечённым числом,
 	// EXECUTE занесёт в 'data->IP' уже новый адрес
+	// учитываем что sizeof(BfcdInteger*) === sizeof(CELL) === sizeof(BFCD_OP)
 	data->rpush((BFCD_OP)++i);
 	return true;
 }
@@ -615,11 +725,8 @@ defword(literal)
 {
 	if(data->vm_state==VM_COMPILE)
 	{
-		data->find_word_to_astack(L"LIT");
-		if(!data->apop()) // Не нашли, чё за хня ?
-			return false;
-		if(!f_coma(data)) return false; // CFA
-		if(!f_coma(data)) return false; // Сбственно число, оно уже на стеке _перед_ вызовом LITERAL
+		if(!data->compile_call(L"LIT")) return false;
+		if(!f_coma(data)) return false; // Собственно число, оно уже на стеке _перед_ вызовом LITERAL
 	}
 	// VM_EXECUTE - нихрена не делаем, просто оставляем число на стеке
 	return true;
@@ -635,15 +742,26 @@ defword(print_stack)
 	return true;
 }
 
+// .RSTACK
+defword(print_rstack)
+{
+	if(!data->RS->_size())
+		puts("\t\t\t\t| Rstack empty.");
+	for(int i=1; i<=data->RS->_size(); i++)
+		printf("\t\t\t\t| R[%d]: %lx %ld\n", i, data->RS->nth(i), data->RS->nth(i));
+	return true;
+}
+
 // STEP
 #define _do(__code) { if(!f_##__code(data)) return false; } 
 defword(step)
 {
-	if(data->_trace) _do(print_stack);
+	if(data->_trace>=TRACE_STACK) _do(print_stack);
+	if(data->_trace>=TRACE_RSTACK) _do(print_rstack);
 	// Считываем слово из входного потока
 	_do(bl);
 	_do(word);
-	if(data->_trace) printf("\t\t\t\t| WORD: %ls\n", (WCHAR_P)data->atop());
+	if(data->_trace>=TRACE_EXEC) printf("\t\t\t\t| WORD: %ls\n", (WCHAR_P)data->atop());
 	// Ищем его в словаре
 	_do(find);
 	BfcdInteger flags = data->apop();
@@ -654,7 +772,7 @@ defword(step)
 		else
 			switch (data->vm_state)
 			{
-				case VM_COMPILE: _do(coma); break;		// CFA заносится на вершину HERE,
+				case VM_COMPILE: _do(ccoma); break;		// CFA заносится на вершину HERE,
 								 						// по сути - компиляция
 				case VM_EXECUTE: _do(execute); break;
 				default: return false;					// Прозошла какая-то херня.
@@ -681,8 +799,8 @@ defword(interpret)
 {
 	while(true)
 	{
-		if(data->_trace)
-			printf("\t\t\t\t| step - Thread: \"%ls\" IP: %p\n", data->name, data->IP);
+		if(data->_trace>=TRACE_EXEC)
+			printf("\t\t\t\t| step - Thread: \"%ls\" IP: %p Head: %p\n", data->name, data->IP, data->here());
 		try
 		{
 			if(!f_step(data)) 
@@ -690,13 +808,15 @@ defword(interpret)
 				switch(data->_errno)
 				{
 					case VM_TERMINATE_THREAD:
-						if(data->_trace) printf("\t\t\t\t| Terminating thread \"%ls\".\n", data->name);
+						if(data->_trace>=TRACE_EXEC) 
+							printf("\t\t\t\t| Terminating thread \"%ls\".\n", data->name);
 						return true;
 					default:
 						printf("\t\t\t\tThread \"%ls\" execution error.\n", data->name);
 						if(data->_errno>0 && data->_errno<VM_ERROR_LAST)
 							printf("\t\t\t\t%s\n", VM_Errors[data->_errno]);
-						if(data->_trace) f_print_stack(data);
+						if(data->_trace>TRACE_STACK) f_print_stack(data);
+						if(data->_trace>TRACE_RSTACK) f_print_rstack(data);
 						return false;
 				}
 			}
@@ -712,8 +832,9 @@ defword(interpret)
 // .
 defword(print)
 {
+	// TODO: может нужен wchar_t и конверт в локальную кодировку ?
 	char s[256];
-	lltoa(data->apop(), s, data->base);
+	lltoa(data->apop(), s, data->digit_base);
 	write(data->STDOUT, s, strlen(s));
 	return true;
 }
@@ -737,7 +858,9 @@ defword(create_from_str)
 {
 	wchar_t* name = (wchar_t*)data->apop();
 	if(!data->is_pointer_valid(name)) return false;
-	return data->create_word(name);
+	if(!data->create_word(name)) return false;
+	//data->compile_call(L"(EXEC)");
+	return true;
 }
 
 // CREATE
@@ -785,3 +908,77 @@ defword(emit)
 	write(data->STDOUT,&packed,len);
 	return true;
 }
+
+// ]
+defword(state_execute)
+{
+	data->vm_state=VM_EXECUTE;
+	return true;
+}
+// ]
+defword(state_compile)
+{
+	data->vm_state=VM_COMPILE;
+	return true;
+}
+// EXIT
+defword(exit)
+{
+	//data->rpop();  - Закоменчено - EXIT особым образом обрабатывается в (EXEC)
+	return true;
+}
+// :
+defword(dcolon)
+{
+	_do(bl);
+	_do(word);
+	_do(create_from_str);
+	_do(state_compile);
+	return true;
+}
+// ;
+defword(word_end_def)
+{
+	if(data->last) data->last->end=(BFCD_OP*)data->here();
+	if(!data->compile_call(L"EXIT")) return false;
+	_do(state_execute);
+	return true;
+}
+
+// DECOMPILE
+defword(decompile)
+{
+	BFCD_OP* cfa = (BFCD_OP*)data->apop();
+	if(!data->is_pointer_valid(cfa) || !Vocabulary::cfa2wh(cfa))
+	{
+		printf("DECOMPILE - invalid CFA: %p\n", cfa);
+		return true;
+	}
+	WordHeader *wh = Vocabulary::cfa2wh(cfa);
+	BFCD_OP* end=wh->end;
+	if(!end)
+	{
+		printf("Warning: DECOMPILE - Word '%ls' end unspecified, reading from stack.\n", 
+			   data->readableName(wh));
+		end=(BFCD_OP*)data->apop();
+	}
+	printf("Decompiling '%ls':\n", data->readableName(wh));
+	while(cfa<end)
+	{
+		wh=NULL;
+		if (data->is_pointer_valid((void*)*cfa)) wh=Vocabulary::cfa2wh((BFCD_OP*)*cfa);
+		if(!wh) printf("%p: %lx %ld\n", cfa, *cfa, *cfa);
+		else
+			printf("%p: %p %ls\n", cfa, *cfa, data->readableName(wh));
+		cfa++;
+	}
+	return true;
+}
+
+// TRACE
+defword(trace)
+{
+	data->apushp(&data->_trace);
+	return true;
+}
+

@@ -30,18 +30,22 @@ struct VMThreadData;
 typedef bool (*BFCD_OP)(VMThreadData*);
 struct Vocabulary;
 
+#define WH_MARK (0x42464344)
 struct WordHeader
 {
 	enum Flags {IMMEDIATE=-1};
-	WStringHash::UID name;
+	BfcdInteger MARK;				// Маркер валидного хидера, используется для проверки при адресной арифметике
+	WStringHash::UID name;			
 	WCHAR_P help;
 	WCHAR_P source;
 	int flags;
+	bool forth;						// false - значит слово бинарное, не нужен вызов через (EXEC)
 	WordHeader* prev;
 	Vocabulary *voc;
-	BFCD_OP CFA;
+	BFCD_OP* end;					// Конец слова, устанавливается фортовским ';'
+	BFCD_OP* CFA;					// указатель на указатель (косвеный шитый код)
 
-	WordHeader(): name(0), help(NULL), source(NULL), flags(0), prev(NULL), voc(NULL), CFA(NULL) {}
+	WordHeader(): MARK(WH_MARK), name(0), help(NULL), source(NULL), flags(0), forth(false), prev(NULL), voc(NULL), end(NULL), CFA(NULL) {}
 };
 
 /*
@@ -52,7 +56,11 @@ struct Vocabulary
 	Vocabulary (TAbstractAllocator* _alloc, CONST_WCHAR_P _name);
 	~Vocabulary();
 
-	WordHeader* add_word(CONST_WCHAR_P _name, BFCD_OP CFA);
+	WordHeader* _add_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger _flags=0, bool is_forth=true);
+	WordHeader* _add_binary_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger _flags=0);
+
+	// CFA -> WordHeader
+	static WordHeader* cfa2wh(BFCD_OP* CFA);
 
 	typedef std::pair<int, WordHeader*> FindResult;
 	// Поиск только в текущем словаре
@@ -63,6 +71,8 @@ struct Vocabulary
 	FindResult find_all_chain(WStringHash::UID _name); 
 	// Проверяет наличие слова с нужным CFA в словаре.
 	bool check_CFA(BFCD_OP cfa);
+	// Имя слова по WordHeader
+	const wchar_t* getName(WordHeader* wh) { return names->get(wh->name); }
 //---	
 protected:
 	WStringHash::UID name;
@@ -126,6 +136,17 @@ enum VM_STATE {VM_EXECUTE=0, VM_COMPILE};
 exception (VMDataError, SimpleException);
 exception (IconvInitError, VMDataError);
 
+// Уровни трасировки
+enum TRACE_LEVELS
+{
+	NO_TRACE=0,
+	TRACE_EXEC,
+	TRACE_STACK,
+	TRACE_RSTACK,
+	TRACE_IN_C_WORDS, 	// Отладочная печать внутри С-шных слов отличных от INTERPRET, EXECUTE, (EXEC)
+	TRACE_STACK_IN_EXEC,
+	TRACE_RSTACK_IN_EXEC
+};
 #define TIB_PAD 16
 struct VMThreadData
 {
@@ -150,8 +171,19 @@ struct VMThreadData
 	void rpush(BFCD_OP p) {RS->push((CELL)p);}
 	BFCD_OP rtop() {return (BFCD_OP)RS->_top();}
 
-	//Поиск слова в локальном стэке словарей.
+	// Поиск слова в локальном стэке словарей.
 	void find_word_to_astack(CONST_WCHAR_P _name);
+	// Имя слова по его WordHeader, т.к. в WH хранится String UID а не полное имя
+	const wchar_t* readableName(WordHeader* wh);
+	// CELL с вершины арифметического стека перемещаем на вершину кода,
+	// по сути это и есть фортовская ','
+	bool astack_top2code();
+	// CFA с вершины арифметического стека -> на вершину кода, фортовское 'CODE,'
+	// на самом деле ',' и 'CODE,' не отличаются 
+	// просто в 'CODE,' есть дополнительные проверки
+	bool astack_top_cfa2code();
+	// Компилируем слово по имени
+	bool compile_call(CONST_WCHAR_P _name);
 
 	// Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
 	// требует постоянной доработки
@@ -182,8 +214,8 @@ struct VMThreadData
 	CELL code;					// Указатель на массив кода
 	BfcdInteger vm_state;		// VM_STATE
 	BfcdInteger _errno;			// Код ошибки, выставляется в словах
-	BfcdInteger _trace;			// Флаг включения трассировки
-	BfcdInteger* here;			// HERE - вершина компиляции
+	BfcdInteger _trace;			// Уровень трассировки
+	BfcdInteger* here() {return (BfcdInteger*)allocator->_code_head();}			// HERE - вершина компиляции
 
 	// Входной поток
 	const char* SYSTEM_ENCODING;
@@ -199,15 +231,14 @@ struct VMThreadData
 	iconv_t iconv_in;
 	iconv_t iconv_out;
 	// База счисления слов при вводе/выводе
-	BfcdInteger base;
-
-	// Основание чисел при парсинге
 	BfcdInteger digit_base;
 
 	// Список _всех_ словарей - общий для всех потоков.
 	VocabularyStack* vocs;
 	// Локальный для потока порядок поиска в словарях. 
 	VocabularyStack* local_vocs_order;
+	// Слово определённое последним в словаре
+	WordHeader* last;
 };
 
 #define defword(NAME) bool f_##NAME(VMThreadData *data)
@@ -235,6 +266,7 @@ defword(state);		// STATE
 defword(get);		// @
 defword(put);		// !
 defword(bye);		// BYE
+defword(exec);		// (EXEC)
 defword(execute);	// EXECUTE
 
 //********************************************************** Слова
@@ -254,6 +286,7 @@ defword(word);		// WORD
 //и выделение памяти
 defword(allot);		// ALLOT
 defword(coma);		// ,
+defword(ccoma);		// CODE,
 defword(str2here);	// S>H
 defword(malloc);	// malloc - В байтах ! Не в CELL's. 
 					// Освобождение памяти на совести GC аллокатора
@@ -262,6 +295,7 @@ defword(number);	// NUMBER
 defword(lit);		// LIT - кладём на стек число лежащее сразу за собой в коде
 defword(literal);	// LITERAL
 defword(print_stack);		// .STACK
+defword(print_rstack);		// .RSTACK
 defword(step);		// STEP - один шаг интерпретатора					
 defword(interpret);	// INTERPRET
 
@@ -277,6 +311,13 @@ defword(char_to_locale);		// C>LOCALE ( wchar_t -- local_char_as_bytes length_in
 									// байты упакованы прямо внутри значения на стеке,
 									// благо sizeof(BfcdInteger) должно хватать даже для упаковки UTF-8 символа
 defword(emit);					// emit 
+defword(state_execute);			// ]
+defword(state_compile);			// [
+defword(exit);					// EXIT
+defword(dcolon);				// :
+defword(word_end_def);			// ;
+defword(decompile);				// DECOMPILE ( CFA -- )
+defword(trace);					// TRACE
 
 #endif //FORTH_H
 

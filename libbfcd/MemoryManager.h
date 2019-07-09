@@ -37,6 +37,7 @@ public:
 	virtual char* strdup(const char*)=0;
 	virtual wchar_t* wstrdup(const wchar_t*)=0;
 	virtual CELL code_alloc(BfcdInteger size)=0;
+	virtual CELL _code_head()=0;
 	virtual bool is_address_valid(void*) {return true;}
 
 	virtual ~TAbstractAllocator() {}
@@ -54,6 +55,7 @@ public:
 	virtual char* strdup(const char*s) {return ::strdup(s);}
 	virtual wchar_t* wstrdup(const wchar_t *s) {return ::wcsdup(s);}
 	virtual CELL code_alloc(BfcdInteger size) {return NULL;}
+	virtual CELL _code_head() {return NULL;}
 	virtual ~SystemAllocator() {}
 };
 
@@ -210,6 +212,7 @@ public:
 
 	// Code allocation
 	virtual CELL code_alloc(BfcdInteger size);
+	virtual CELL _code_head();
 
 	// base address
 	CELL _base() {return base;}
@@ -246,6 +249,7 @@ public:
 	virtual char* strdup(const char* s);
 	virtual wchar_t* wstrdup(const wchar_t* s);
 	virtual CELL code_alloc(BfcdInteger size);
+	virtual CELL _code_head();
 
 protected:
 	CELL base;
