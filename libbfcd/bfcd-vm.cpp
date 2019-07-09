@@ -38,7 +38,7 @@ void BfcdVM::create_main_thread()
 				 "UTF-8", // _SYSTEM_ENCODING,
 				 KB(4), // _tib_size=KB(4)
 				 true,  // _use_tty = false,
-				 1, // __trace = 0,
+				 TRACE_IN_C_WORDS, // __trace = 0,
 				 STDIN_FILENO, // _STDIN = STDIN_FILENO,
 				 STDOUT_FILENO, // _STDOUT = STDOUT_FILENO,
 				 STDERR_FILENO); // _STDERR = STDERR_FILENO);
@@ -101,6 +101,14 @@ void BfcdVM::create_base_vocabulary()
 	_F(L";", word_end_def, WordHeader::IMMEDIATE);
 	_(L"DECOMPILE", decompile);
 	_(L"TRACE", trace);
+	_(L"MARK>", mark);
+	_(L"RESOLVE>", resolve);
+	_(L"BRANCH", branch);
+	_(L"NOP", nop);
+	_(L"(DOES>)", does_code);
+	_(L"(DOES)", does2);
+	_F(L"DOES>", does, WordHeader::IMMEDIATE);
+	_(L"'", apostroph);
 }
 #undef _
 

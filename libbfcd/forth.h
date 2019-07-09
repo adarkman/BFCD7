@@ -306,7 +306,7 @@ defword(plus);		// +
 
 //********************************************************** Создание слов
 defword(create_from_str);		// >CREATE
-defword(create);				// CREATE
+defword(create);				// CREATE - не использовать (!) без DOES> 
 defword(char_to_locale);		// C>LOCALE ( wchar_t -- local_char_as_bytes length_in_bytes )
 									// байты упакованы прямо внутри значения на стеке,
 									// благо sizeof(BfcdInteger) должно хватать даже для упаковки UTF-8 символа
@@ -318,6 +318,16 @@ defword(dcolon);				// :
 defword(word_end_def);			// ;
 defword(decompile);				// DECOMPILE ( CFA -- )
 defword(trace);					// TRACE
+
+//********************************************************** DOES>
+defword(mark);					// MARK> - резервирует место для адреса вперёд, адрес места - на стек
+defword(resolve);				// RESOLVE> - снимает адрес зарезервированного места со стека, и записывает туда текущий HERE
+defword(branch);				// BRANCH
+defword(nop);					// NOP
+defword(does_code);				// (DOES>)
+defword(does2);					// (DOES)
+defword(does);					// DOES>			
+defword(apostroph);				// '
 
 #endif //FORTH_H
 

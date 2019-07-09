@@ -235,7 +235,7 @@ bool VMThreadData::astack_top2code()
 		return false;
 	*p=apop();
 	if(_trace>=TRACE_IN_C_WORDS)
-		printf("\t\t\t\t\\ top2code: %p %p %p\n", p, here(), *p);
+		printf("\t\t\t\t\\ top2code PTR: %p HERE: %p VALUE: %p\n", p, here(), *p);
 	return true;
 }
 
@@ -396,8 +396,14 @@ defword(exec)
 			printf("\t\t\t\t*F* %p %p\n", fn, *fn);
 		// Косвенный шитый код, получаем BFCD_OP через **fn; 
 		BFCD_OP* op=(BFCD_OP*)*fn;
-		if(*op==f_exit) break; // EXIT, прерываем цикл, 
+		if(!op) return false; // Указатель куда-то в неаллоцированную область
+		if(*op==f_exit) 
+		{
+			if(data->_trace>=TRACE_EXEC)
+				printf("\t\t\t\t*F* EXIT at %p\n", op);
+			break; // EXIT, прерываем цикл, 
 								// поскольку rpush не делается, получается завуалированный rpop
+		}
 		//
 		data->apushp((void*)*fn);
 		if(!f_execute(data)) return false; // Да, взаимная рекурсия с EXECUTE
@@ -420,6 +426,7 @@ defword(execute)
 #endif	
 	if(!data->is_pointer_valid((void*)fn)) // *CFA _должен_ быть в пределах ПУЛА
 		return false;
+	if(!*fn) return false; // *СFA смотрит в неаллоцированную область
 	if(data->_trace>=TRACE_EXEC)
 	{
 		WordHeader *wh = Vocabulary::cfa2wh(fn);
@@ -438,7 +445,7 @@ defword(execute)
 	if(data->_trace>=TRACE_STACK_IN_EXEC) f_print_stack(data);
 	if(data->_trace>=TRACE_RSTACK_IN_EXEC) f_print_rstack(data);
 	//
-	bool res = (wh->forth) ? f_exec(data) /*Форт слово*/: (*fn)(data)/*Сишная функция*/;
+	bool res = wh->forth ? f_exec(data) /*Форт слово*/: (*fn)(data)/*Сишная функция*/;
 	// .STACK
 	if(data->_trace>=TRACE_STACK_IN_EXEC) f_print_stack(data);
 	if(data->_trace>=TRACE_RSTACK_IN_EXEC) f_print_rstack(data);
@@ -869,6 +876,9 @@ defword(create)
 	_do(bl);
 	_do(word);
 	_do(create_from_str);
+	data->compile_call(L"(DOES)");	// Помещает на стек адрес +3 CFA - там по сути будут данные
+	data->compile_call(L"NOP");		// PAD для BRANCH <addr> - подставляется при исполнении (DOES>)	
+	data->compile_call(L"NOP");	
 	return true;
 }
 
@@ -960,7 +970,7 @@ defword(decompile)
 	{
 		printf("Warning: DECOMPILE - Word '%ls' end unspecified, reading from stack.\n", 
 			   data->readableName(wh));
-		end=(BFCD_OP*)data->apop();
+		end=(BFCD_OP*)cfa+data->apop();
 	}
 	printf("Decompiling '%ls':\n", data->readableName(wh));
 	while(cfa<end)
@@ -979,6 +989,88 @@ defword(decompile)
 defword(trace)
 {
 	data->apushp(&data->_trace);
+	return true;
+}
+
+// <MARK
+defword(mark)
+{
+	void *p=data->here();
+	data->allot(sizeof(CELL));
+	data->apushp(p);
+	return true;
+}
+
+// RESOLVE
+defword(resolve)
+{
+	BFCD_OP* p=(BFCD_OP*)data->apop();
+	if(!data->is_pointer_valid((CELL)p)) return false;
+	*p=(BFCD_OP)data->here();
+	return true;
+}
+
+// BRANCH
+defword(branch)
+{
+	BFCD_OP* p=(BFCD_OP*)data->rpop();
+	if(!data->is_pointer_valid((CELL)p)) return false;
+	if(!data->is_pointer_valid((CELL)*p)) return false;
+	data->rpush(*p);
+	return true;
+
+}
+
+// NOP
+defword(nop)
+{
+	return true;
+}
+
+// (DOES>)
+defword(does_code)
+{
+	// Адрес следующего слова
+	BfcdInteger* i=(BfcdInteger*)data->RS->_top();
+	if(data->_trace>=TRACE_IN_C_WORDS)
+		printf("\t\t\t\t| (DOES>) RTOP: %p Last: %p LCFA: %p DOES2: %p\n", 
+			   i, data->last, data->last->CFA, i+1);
+	BfcdInteger* last_code=(BfcdInteger*)data->last->CFA;
+	// Компилируем BRANCH <addr> сразу после (DOES) последнего определенного (data->last) слова
+	// см. CREATE
+	data->find_word_to_astack(L"BRANCH");
+	if(!data->apop()) return false;
+	*(last_code+1) = data->apop();
+	*(last_code+2) = (BfcdInteger)(i+1);
+	return true;
+}
+
+// (DOES)
+defword(does2)
+{
+	// Адрес следующего слова
+	BfcdInteger* i=(BfcdInteger*)data->RS->_top();
+	if(data->_trace>=TRACE_IN_C_WORDS)
+		printf("\t\t\t\t| (DOES) RTOP: %p\n", i);
+	data->apushp(i+2); // Адрес данных на стек - см. CREATE
+	return true;
+}
+
+// DOES>
+defword(does)
+{
+	data->compile_call(L"(DOES>)");
+	data->compile_call(L"EXIT");
+	return true;
+}
+
+// '
+defword(apostroph)
+{
+	_do(bl);
+	_do(word);
+	_do(find);
+	if(!data->apop()) return false;
 	return true;
 }
 
