@@ -1,7 +1,5 @@
 #include "forth.h"
 #include <stdio.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <wctype.h>
 #include <limits.h>
 
@@ -150,11 +148,11 @@ void OSEnvironment::load_envs()
 	if(snprintf(home,PATH_MAX,"%s/.bfcd",env)>=PATH_MAX) throw FileNameError();
 }
 
-char* OSEnvironment::full_config_path(CONST_WCHAR_P _name)
+char* OSEnvironment::full_config_path(CONST_WCHAR_P _name,CONST_WCHAR_P suffix)
 {
 	char *path=(char*)malloc(PATH_MAX);
 	if(!path) throw OSError();
-	if(snprintf(path,PATH_MAX,"%s/%ls",home,_name)>=PATH_MAX) 
+	if(snprintf(path,PATH_MAX,"%s/%ls%ls",home,_name,(suffix?suffix:L""))>=PATH_MAX) 
 	{
 		free(path);
 		throw FileNameError();
@@ -174,6 +172,15 @@ TSharedData::~TSharedData()
 {
 	pthread_mutex_destroy(&readline_mutex);
 }
+
+// libedit prompt function
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+char* libedit_prompt(EditLine*)
+{
+	return "";
+}
+#pragma GCC diagnostic pop
 
 /*
  * VMThreadData
@@ -212,13 +219,24 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	RS=XNEW(allocator,RStack) (allocator);
 	tib=(char*)allocator->malloc(TIB_SIZE+TIB_PAD);
 	word_buffer=(wchar_t*)allocator->malloc(sizeof(wchar_t)*(TIB_SIZE+TIB_PAD));
+	// iconv
 	iconv_in = iconv_open("WCHAR_T", SYSTEM_ENCODING);
 	iconv_out = iconv_open(SYSTEM_ENCODING, "WCHAR_T");
 	if (iconv_in == (iconv_t)-1 || iconv_out == (iconv_t)-1) throw IconvInitError();
+	// libedit
+	editLine = el_init("bfcd7", stdin, stdout, stderr);
+	el_set(editLine, EL_PROMPT, libedit_prompt);
+  	el_set(editLine, EL_EDITOR, "emacs");
+	elHistory = history_init();
+	el_history_size = 10000;
+	history(elHistory, &el_hist_event, H_SETSIZE, el_history_size);
+	el_set(editLine, EL_HIST, history, elHistory);
 }
 
 VMThreadData::~VMThreadData()
 {
+	history_end(elHistory);
+	el_end(editLine);
 	iconv_close(iconv_in);
 	iconv_close(iconv_out);
 	AS->~AStack();
@@ -520,13 +538,17 @@ defword(read_tib)
 		char prompt[256];
 		snprintf(prompt,255,"%ls%s> ", data->name, data->vm_state==VM_COMPILE?"(COMPILE)":"");
 		pthread_mutex_lock(&data->shared->readline_mutex);
-		char *s = readline(prompt);
-		if(s) add_history(s);
+		int count;
+		printf("%s", prompt);
+		//char *s = readline(prompt);
+		char *s = (char*)el_gets(data->editLine,&count);
+		if(s && count>0) //add_history(s);
+			history(data->elHistory, &data->el_hist_event, H_ENTER, s);
 		pthread_mutex_unlock(&data->shared->readline_mutex);
 		data->tib_length = (strlen(s)>data->TIB_SIZE-1) ? data->TIB_SIZE : strlen(s);
 		strncpy (data->tib,s,data->tib_length);
 		data->tib_index = 0;
-		free(s);
+		//free(s); - commented out in libedit - internal buffer returns in el_gets
 	}
 	// Заменяем все вайтспейсы и нули на пробел,
 	// на всяк пож добавляем пробел в конец буфера
@@ -534,7 +556,7 @@ defword(read_tib)
 	{
 		int i=0;
 		for (;i<=data->tib_length; i++)
-			if (isspace(data->tib[i] || !data->tib[i])) data->tib[i]=' ';
+			if (isspace(data->tib[i]) || !data->tib[i]) data->tib[i]=' ';
 		data->tib[data->tib_length++]=' ';
 		data->tib[data->tib_length]='\0';
 	}

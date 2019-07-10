@@ -15,6 +15,7 @@
 #include <utility>
 #include <unordered_map>
 #include <iconv.h>
+#include <histedit.h>
 
 // require C11 standart in compiler
 static_assert(sizeof(BfcdInteger) >= sizeof(WStringHash::UID),
@@ -127,7 +128,7 @@ public:
 
 	// Получить полное имя файла в конфигурационном каталоге
 	// free() must be called on returned value
-	char* full_config_path(CONST_WCHAR_P _name);
+	char* full_config_path(CONST_WCHAR_P _name,CONST_WCHAR_P suffix=NULL);
 //---
 protected:
 	char *home;
@@ -172,6 +173,9 @@ enum TRACE_LEVELS
 	TRACE_RSTACK_IN_EXEC
 };
 #define TIB_PAD 16
+// libedit prompt function
+char* libedit_prompt(EditLine*);
+
 struct VMThreadData
 {
 	VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
@@ -251,6 +255,11 @@ struct VMThreadData
 	BfcdInteger tib_length;
 	wchar_t* word_buffer; // Буфер для WORD;
 	wchar_t* number_word; // Строка конвертируемая в число. См. NUMBER, &NUMBER
+	// libedit  
+	EditLine *editLine; 
+	History *elHistory;
+	HistEvent el_hist_event;
+	BfcdInteger el_history_size;
 	// iconv
 	iconv_t iconv_in;
 	iconv_t iconv_out;
@@ -276,6 +285,7 @@ protected:
 
 /*
  * Forth low level words
+ * Здесь только самый минимум необходимый для того, чтобы как-то походить на Forth
  *
  * Большими БУКВАМИ - слова _низкого_ уровня, или работа с входным потоком 
  *

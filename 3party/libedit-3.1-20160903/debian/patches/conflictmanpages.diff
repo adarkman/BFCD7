@@ -1,0 +1,20 @@
+Index: libedit/doc/Makefile.am
+===================================================================
+--- libedit.orig/doc/Makefile.am
++++ libedit/doc/Makefile.am
+@@ -1,5 +1,5 @@
+ 
+-EL_MANS = editline.3 editline.7 editrc.5
++EL_MANS = editline.3edit editline.7 editrc.5
+ 
+ man_MANS = $(EL_MANS)
+ 
+@@ -52,7 +52,7 @@ EL_MAN_LINKS += \
+ install-data-hook: $(EL_MAN_LINKS)
+ 
+ $(EL_MAN_LINKS):
+-	(cd $(DESTDIR)$(man3dir) && rm -f $@ && $(LN_S) editline.3 $@)
++	(cd $(DESTDIR)$(man3dir) && rm -f $@ && $(LN_S) editline.3edit $@)
+ 
+ $(EL_MANS):
+ 	@if test "$(MANTYPE)" = "mdoc"; then\

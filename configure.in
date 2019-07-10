@@ -45,7 +45,8 @@ if test $HAVE_DL = "1" ; then
 	AC_CHECK_LIB(dl,dlopen,,AC_MSG_ERROR(you must have libdl.so instaled for compile BFCD7))
 fi
 dnl AC_CHECK_LIB(gc,GC_malloc,,AC_MSG_ERROR(you must have Boehm Garbage Collector installed for compile BFCD7))
-AC_CHECK_LIB(readline,readline,,AC_MSG_ERROR(you must have libreadline installed for compile BFCD7))
+dnl AC_CHECK_LIB(readline,readline,,AC_MSG_ERROR(you must have libreadline installed for compile BFCD7))
+AC_CHECK_LIB(edit,el_init,,AC_MSG_ERROR(you must have libedit installed for compile BFCD7))
 
 dnl Checks for header files.
 AC_HEADER_STDC
