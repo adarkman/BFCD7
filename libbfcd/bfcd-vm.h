@@ -8,7 +8,7 @@
 #ifndef BFCD_VM_H
 #define BFCD_VM_H
 
-#include "forth.h"
+#include "forth-words.h"
 
 class BfcdVM
 {

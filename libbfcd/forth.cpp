@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <wctype.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /*
  * VM Error Messages
@@ -134,6 +137,7 @@ OSEnvironment::OSEnvironment()
 {
 	home = (char*)malloc(PATH_MAX);
 	load_envs();
+	check_home_config_dir();
 }
 
 OSEnvironment::~OSEnvironment()
@@ -145,7 +149,7 @@ void OSEnvironment::load_envs()
 {
 	char *env = getenv("HOME");
 	if(!home) throw OSError();
-	if(snprintf(home,PATH_MAX,"%s/.bfcd",env)>=PATH_MAX) throw FileNameError();
+	if(snprintf(home,PATH_MAX,"%s/%s",env,HOME_CONFIG_DIR)>=PATH_MAX) throw FileNameError();
 }
 
 char* OSEnvironment::full_config_path(CONST_WCHAR_P _name,CONST_WCHAR_P suffix)
@@ -158,6 +162,38 @@ char* OSEnvironment::full_config_path(CONST_WCHAR_P _name,CONST_WCHAR_P suffix)
 		throw FileNameError();
 	}
 	return path;
+}
+
+bool OSEnvironment::rw_file_exists(const char* fname)
+{
+	struct stat _stat;
+	char proc_path[PATH_MAX];
+	snprintf(proc_path,PATH_MAX,"/proc/%d",getpid());
+	stat(proc_path,&_stat);
+	uid_t proc_uid = _stat.st_uid;
+	gid_t proc_gid = _stat.st_gid;
+
+	stat(fname, &_stat);
+	// Check for regular file
+	if (!S_ISREG(_stat.st_mode)) return false;
+	// If the process owns the file, check if it has read/write access.
+	if (proc_uid == _stat.st_uid && _stat.st_mode & S_IRUSR && _stat.st_mode & S_IWUSR) 
+		return true;
+	// Check if the group of the process's UID matches the file's group
+	// and if so, check for read/write access.
+	if (proc_gid == _stat.st_gid && _stat.st_mode & S_IRGRP && _stat.st_mode & S_IWGRP) 
+		return true;
+	// The process's UID is neither the owner of the file nor does its GID
+	// match the file's.  Check whether the file is world readable.
+	if (_stat.st_mode & S_IROTH && _stat.st_mode & S_IWOTH) 
+		return true;
+	return false;
+}
+
+void OSEnvironment::check_home_config_dir()
+{
+	if(mkdir(home,0755) && errno!=EEXIST) // mkdir returns !=0 on fail
+		throw HomeDirError();
 }
 
 /*
@@ -176,9 +212,15 @@ TSharedData::~TSharedData()
 // libedit prompt function
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wwrite-strings"
-char* libedit_prompt(EditLine*)
+char* libedit_prompt(EditLine* el)
 {
-	return "";
+	// EL_CLIENTDATA устанавливается в f_read_tib 
+	char* p;
+	el_get(el,EL_CLIENTDATA,&p);
+	if(!p)
+		return "? ";
+	else
+		return p;
 }
 #pragma GCC diagnostic pop
 
@@ -224,6 +266,11 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	iconv_out = iconv_open(SYSTEM_ENCODING, "WCHAR_T");
 	if (iconv_in == (iconv_t)-1 || iconv_out == (iconv_t)-1) throw IconvInitError();
 	// libedit
+	libedit_init();
+}
+
+void VMThreadData::libedit_init()
+{
 	editLine = el_init("bfcd7", stdin, stdout, stderr);
 	el_set(editLine, EL_PROMPT, libedit_prompt);
   	el_set(editLine, EL_EDITOR, "emacs");
@@ -231,6 +278,7 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	el_history_size = 10000;
 	history(elHistory, &el_hist_event, H_SETSIZE, el_history_size);
 	el_set(editLine, EL_HIST, history, elHistory);
+	history(elHistory, &el_hist_event, H_SETUNIQUE, 1);
 }
 
 VMThreadData::~VMThreadData()
@@ -539,9 +587,11 @@ defword(read_tib)
 		snprintf(prompt,255,"%ls%s> ", data->name, data->vm_state==VM_COMPILE?"(COMPILE)":"");
 		pthread_mutex_lock(&data->shared->readline_mutex);
 		int count;
-		printf("%s", prompt);
+		//printf("%s", prompt);
 		//char *s = readline(prompt);
+		el_set(data->editLine,EL_CLIENTDATA, prompt);
 		char *s = (char*)el_gets(data->editLine,&count);
+		el_set(data->editLine,EL_CLIENTDATA, NULL);
 		if(s && count>0) //add_history(s);
 			history(data->elHistory, &data->el_hist_event, H_ENTER, s);
 		pthread_mutex_unlock(&data->shared->readline_mutex);

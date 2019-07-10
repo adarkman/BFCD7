@@ -119,7 +119,9 @@ extern const char* VM_Errors[VM_ERROR_LAST];
  */
 exception (OSError, SimpleException);
 exception (FileNameError, OSError);
+exception (HomeDirError, OSError);
 
+#define HOME_CONFIG_DIR ".bfcd"
 class OSEnvironment
 {
 public:	
@@ -129,6 +131,10 @@ public:
 	// Получить полное имя файла в конфигурационном каталоге
 	// free() must be called on returned value
 	char* full_config_path(CONST_WCHAR_P _name,CONST_WCHAR_P suffix=NULL);
+	// Проверка на существование регулярного файла с правами RW для текущего процесса
+	bool rw_file_exists(const char* fname);
+	// Проверяем наличие '~/.bfcd/' 
+	void check_home_config_dir();
 //---
 protected:
 	char *home;
@@ -190,6 +196,9 @@ struct VMThreadData
 				 int _STDOUT = STDOUT_FILENO,
 				 int _STDERR = STDERR_FILENO);
 	~VMThreadData();
+
+	// libedit initialization
+	void libedit_init();
 
 	void apush(BfcdInteger a) {AS->push(a);}
 	void apushp(void* p) {AS->push((BfcdInteger)p);}

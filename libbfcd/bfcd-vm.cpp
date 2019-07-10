@@ -8,8 +8,9 @@ BfcdVM::BfcdVM()
 	vocs = XNEW(allocator,TStack<Vocabulary*>)(allocator);
 	vocs->push(main_voc);
 	create_base_vocabulary();
-	// Разделяемые данные потоков
+	// OS interface
 	os = XNEW(allocator,OSEnvironment)();
+	// Разделяемые данные потоков
 	shared = XNEW(allocator,TSharedData)(os);
 	// Основной поток исполнения
 	create_main_thread();	
@@ -113,6 +114,8 @@ void BfcdVM::create_base_vocabulary()
 	_(L"(DOES)", does2);
 	_F(L"DOES>", does, WordHeader::IMMEDIATE);
 	_(L"'", apostroph);
+	_(L"!hs", save_history);
+	_(L"!hl", load_history);
 }
 #undef _
 
