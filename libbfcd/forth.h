@@ -114,13 +114,37 @@ enum ErrorCodes
 extern const char* VM_Errors[VM_ERROR_LAST];
 
 /*
+ * OS environment
+ */
+exception (OSError, SimpleException);
+exception (FileNameError, OSError);
+
+class OSEnvironment
+{
+public:	
+	OSEnvironment();
+	~OSEnvironment();
+
+	// Получить полное имя файла в конфигурационном каталоге
+	// free() must be called on returned value
+	char* full_config_path(CONST_WCHAR_P _name);
+//---
+protected:
+	char *home;
+
+	// Получаем данные из переменных среды
+	void load_envs();
+};
+
+/*
  * Общие данные для всех потоков
  */
 struct TSharedData
 {
 	pthread_mutex_t readline_mutex;
+	OSEnvironment* os;
 
-	TSharedData();
+	TSharedData(OSEnvironment* _os);
 	~TSharedData();
 };
 

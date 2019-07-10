@@ -25,6 +25,7 @@ public:
 	void create_main_thread();
 	// Запуск главного потока
 	void main_thread_run();
+
 protected:
 	MemoryManager* allocator;
 	// Базовый словарь
@@ -34,6 +35,7 @@ protected:
 	// Главный поток исполнения
 	VMThreadData* main_thread;
 	// Общие данные потоков
+	OSEnvironment* os;
 	TSharedData *shared;
 };
 

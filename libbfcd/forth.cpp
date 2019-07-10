@@ -3,6 +3,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <wctype.h>
+#include <limits.h>
 
 /*
  * VM Error Messages
@@ -129,9 +130,42 @@ bool Vocabulary::check_CFA(BFCD_OP cfa)
 }
 
 /*
+ * OS environment
+ */
+OSEnvironment::OSEnvironment()
+{
+	home = (char*)malloc(PATH_MAX);
+	load_envs();
+}
+
+OSEnvironment::~OSEnvironment()
+{
+	free(home);
+}
+
+void OSEnvironment::load_envs()
+{
+	char *env = getenv("HOME");
+	if(!home) throw OSError();
+	if(snprintf(home,PATH_MAX,"%s/.bfcd",env)>=PATH_MAX) throw FileNameError();
+}
+
+char* OSEnvironment::full_config_path(CONST_WCHAR_P _name)
+{
+	char *path=(char*)malloc(PATH_MAX);
+	if(!path) throw OSError();
+	if(snprintf(path,PATH_MAX,"%s/%ls",home,_name)>=PATH_MAX) 
+	{
+		free(path);
+		throw FileNameError();
+	}
+	return path;
+}
+
+/*
  * Общие данные для всех потоков
  */
-TSharedData::TSharedData()
+TSharedData::TSharedData(OSEnvironment* _os): os(_os)
 {
 	pthread_mutex_init(&readline_mutex,NULL);
 }

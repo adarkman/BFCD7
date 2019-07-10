@@ -3,11 +3,15 @@
 BfcdVM::BfcdVM()
 {
 	allocator = new MemoryManager();
+	// Главный словарь
 	main_voc = XNEW(allocator,Vocabulary)(allocator,L"FORTH");
 	vocs = XNEW(allocator,TStack<Vocabulary*>)(allocator);
 	vocs->push(main_voc);
 	create_base_vocabulary();
-	shared = XNEW(allocator,TSharedData)();
+	// Разделяемые данные потоков
+	os = XNEW(allocator,OSEnvironment)();
+	shared = XNEW(allocator,TSharedData)(os);
+	// Основной поток исполнения
 	create_main_thread();	
 }
 
