@@ -215,6 +215,8 @@ TSharedData::~TSharedData()
 char* libedit_prompt(EditLine* el)
 {
 	// EL_CLIENTDATA устанавливается в f_read_tib 
+	// По идее реализация Thread Safe, на там (f_read_tib)
+	// всё-равно мутексами огорожено
 	char* p;
 	el_get(el,EL_CLIENTDATA,&p);
 	if(!p)
@@ -585,13 +587,15 @@ defword(read_tib)
 	{
 		char prompt[256];
 		snprintf(prompt,255,"%ls%s> ", data->name, data->vm_state==VM_COMPILE?"(COMPILE)":"");
+		// Мутексы обязательны - запросы
+		// от разных VM Thread не должны лезть на терминал одновременно
 		pthread_mutex_lock(&data->shared->readline_mutex);
 		int count;
 		//printf("%s", prompt);
 		//char *s = readline(prompt);
-		el_set(data->editLine,EL_CLIENTDATA, prompt);
+		el_set(data->editLine,EL_CLIENTDATA, prompt); // Установка prompt для libedit - см. libedit_prompt
 		char *s = (char*)el_gets(data->editLine,&count);
-		el_set(data->editLine,EL_CLIENTDATA, NULL);
+		el_set(data->editLine,EL_CLIENTDATA, NULL); // Empty libedit prompt
 		if(s && count>0) //add_history(s);
 			history(data->elHistory, &data->el_hist_event, H_ENTER, s);
 		pthread_mutex_unlock(&data->shared->readline_mutex);

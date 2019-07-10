@@ -10,7 +10,7 @@
 
 #include "forth.h"
 
-//********************************************************** History file
+//********************************************************** History file per VM Thread
 defword(save_history);		// !hs
 defword(load_history);		// !hl
 
