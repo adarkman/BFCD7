@@ -1,5 +1,6 @@
 #include "forth-words.h"
 
+// !hs
 defword(save_history)
 {
 	char *fname=data->shared->os->full_config_path(data->name,L"-history");
@@ -17,6 +18,7 @@ defword(save_history)
 	return true;
 }
 
+// !hl
 defword(load_history)
 {
 	char *fname=data->shared->os->full_config_path(data->name,L"-history");
@@ -27,6 +29,22 @@ defword(load_history)
 	else
 		if(data->_trace>=TRACE_IN_C_WORDS)
 			printf("\t\t\t\t| !hl - invalid file.\n");
+	return true;
+}
+
+// dropall
+defword(dropall)
+{
+	int i;
+	for(i=0; i<data->AS->_size(); i++) data->apop();
+	return true;
+}
+
+// Rdropall
+defword(rdropall)
+{
+	int i;
+	for(i=0; i<data->RS->_size(); i++) data->rpop();
 	return true;
 }
 

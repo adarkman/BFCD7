@@ -14,5 +14,9 @@
 defword(save_history);		// !hs
 defword(load_history);		// !hl
 
+//********************************************************** Восстановление после сбоев
+defword(dropall);			// dropall
+defword(rdropall);			// Rdropall
+
 #endif // FORTH_WORDS_H
 

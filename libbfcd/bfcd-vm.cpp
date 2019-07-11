@@ -116,6 +116,8 @@ void BfcdVM::create_base_vocabulary()
 	_(L"'", apostroph);
 	_(L"!hs", save_history);
 	_(L"!hl", load_history);
+	_(L"dropall", dropall);
+	_(L"Rdropall", rdropall);
 }
 #undef _
 
