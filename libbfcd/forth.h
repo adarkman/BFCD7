@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <iconv.h>
 #include <histedit.h>
+#include "error-codes.h"
 
 // require C11 standart in compiler
 static_assert(sizeof(BfcdInteger) >= sizeof(WStringHash::UID),
@@ -99,20 +100,6 @@ protected:
 	// Собственно список слов в словаре
 	WordsMap* words;
 };
-
-/*
- 	//Поиск слова в стэке словарей	//Поиск слова в стэке словарей..* Коды ошибок VM
- */
-enum ErrorCodes
-{
-	VM_OK=0,
-	VM_SEGFAULT,
-	VM_TERMINATE_THREAD,			// На самом деле не ошибка, а запрос на остановку потока выполнения
-									// см. defword(bye)
-	VM_ERROR_LAST
-};
-
-extern const char* VM_Errors[VM_ERROR_LAST];
 
 /*
  * OS environment
@@ -299,6 +286,8 @@ protected:
  * Большими БУКВАМИ - слова _низкого_ уровня, или работа с входным потоком 
  *
  */
+// Используется вместо 'return false' внутри бинарных слов
+#define FAILED(__errno__) {data->_errno=__errno__; return false; }
 //********************************************************** Базовые
 //слова
 defword(bl); 		// BL
