@@ -772,7 +772,7 @@ defword(str2here)
 {
 	wchar_t* s=(wchar_t*)data->apop();
 	if(!data->is_pointer_valid(s)) FAILED(VM_SH_SEGV)
-	s=data->process_str(s); 	// Обработка \\, выделенная память остаётся на совести GC аллокатора
+	s=data->process_str(s); 	
 	BfcdInteger size_in_bytes=wcslen(s)*sizeof(wchar_t);
 	// Выделение памяти в коде под строку
 	CELL dst = data->here();
@@ -781,6 +781,7 @@ defword(str2here)
 	// Копирование строки в словарь
 	bzero(dst,size_in_bytes+1);
 	memcpy(dst,s,size_in_bytes);
+	data->allocator->free(s);		// Нефиг лишний раз GC напрягать
 	return true;
 }
 
