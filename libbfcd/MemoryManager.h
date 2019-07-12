@@ -20,6 +20,8 @@
 #include <errno.h>
 #include <new>
 #include <wchar.h>
+#include <functional> // Инстанциированные темплейты типа std::hash<unsigned int>
+#include <utility>
 
 struct SimpleException { virtual ~SimpleException() {} virtual char* operator () ()=0;  };
 #define exception(Name,Parent) struct Name: public Parent { char* Name##_name; \
@@ -184,6 +186,28 @@ public:
 };
 
 /*
+ * Адаптер для STL
+ */
+template <class T> class STLAllocator
+{
+public:	
+	using value_type = T;
+	STLAllocator(TAbstractAllocator *_mm): mm(_mm) {}
+	template <class U> STLAllocator(const STLAllocator<U> &other) { mm=other.mm; }
+
+	// STL вызывает аллокатор не с количеством байт, а c количеством елементов T
+	// В C++11: a.allocate(n) - allocates storage suitable for n objects of type T
+	T* allocate(std::size_t count) { return static_cast<T*>(mm->malloc(count*sizeof(T))); }
+	void deallocate(T* p, std::size_t) { if(p && mm->is_address_valid(p)) mm->free(p); }
+
+//---
+	TAbstractAllocator* mm;
+};
+
+template <class T, class U> bool operator==(const STLAllocator<T>& a, const STLAllocator<U>& b) { return a->mm==b->mm; }
+template <class T, class U> bool operator!=(const STLAllocator<T>& a, const STLAllocator<U>& b) { return ! operator == (a,b); }
+
+/*
  * МemoryManager - Менеджер памяти с GC, 
  * отображением файла образа в память, блэкджеком и шлюхами.  
  */
@@ -231,7 +255,11 @@ protected:
 
 	// Список всех выделенных кусков памяти.
 	// Нужен для GC.
-	TStack<CELL>* allocatedChunks;
+	typedef std::unordered_map<void*,
+				bool,
+				std::hash<void*>,
+				std::equal_to<void*>> Ptr_Map;
+	Ptr_Map* allocatedChunks;
 };
 
 /*
@@ -259,28 +287,6 @@ protected:
 	BfcdInteger code_size, data_size;
 	TStack<CELL>* allocatedChunks;
 };
-
-/*
- * Адаптер для STL
- */
-template <class T> class STLAllocator
-{
-public:	
-	using value_type = T;
-	STLAllocator(TAbstractAllocator *_mm): mm(_mm) {}
-	template <class U> STLAllocator(const STLAllocator<U> &other) { mm=other.mm; }
-
-	// STL вызывает аллокатор не с количеством байт, а c количеством елементов T
-	// В C++11: a.allocate(n) - allocates storage suitable for n objects of type T
-	T* allocate(std::size_t count) { return static_cast<T*>(mm->malloc(count*sizeof(T))); }
-	void deallocate(T* p, std::size_t) { if(p && mm->is_address_valid(p)) mm->free(p); }
-
-//---
-	TAbstractAllocator* mm;
-};
-
-template <class T, class U> bool operator==(const STLAllocator<T>& a, const STLAllocator<U>& b) { return a->mm==b->mm; }
-template <class T, class U> bool operator!=(const STLAllocator<T>& a, const STLAllocator<U>& b) { return ! operator == (a,b); }
 
 #endif //MEMORY_MANAGER_H
 

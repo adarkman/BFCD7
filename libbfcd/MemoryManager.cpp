@@ -23,7 +23,7 @@ MemoryManager::MemoryManager(BfcdInteger _vm_code_size, BfcdInteger _vm_data_siz
 	code_head(0)
 {
     pthread_mutex_init(&mutex, NULL);
-	allocatedChunks = new TStack<CELL>(&systemAllocator);
+	allocatedChunks = new Ptr_Map(0);
 	// Align Code/Data size to PAGE boundary
     int page_count_data = (_vm_data_size/PAGE_SIZE)+1;
     vm_data_size = PAGE_SIZE*page_count_data;
@@ -66,7 +66,7 @@ CELL MemoryManager::malloc(BfcdInteger size)
     pthread_mutex_lock(&mutex);
 	//__CODE(printf("\\ MM::malloc - start %ld\n", size));
     void* p = mspace_malloc(heap, size);
-	allocatedChunks->push(p);
+	(*allocatedChunks)[p]=false;
 	//__CODE(printf("\\ MM::malloc - %p\n", p));
     pthread_mutex_unlock(&mutex);
     return p;
@@ -78,6 +78,7 @@ void MemoryManager::free(CELL ptr)
     {
         pthread_mutex_lock(&mutex);
         mspace_free(heap, ptr);
+		allocatedChunks->erase(ptr);
         pthread_mutex_unlock(&mutex);
     }
 }
