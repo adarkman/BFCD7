@@ -245,6 +245,9 @@ public:
 	virtual void gc_mark_accessible(CELL p)=0;
 	virtual void gc_mark_freed(CELL p)=0;
 
+	// base address
+	CELL _base() {return base;}
+
 	// Cоздания сабпула на всю оставшуюся память.
 	// Внимание ! Используется тот же mspace.
 	friend SubPool* createFullSubpool(BasicPool* mem);
@@ -260,6 +263,9 @@ protected:
 	// Базовый менеджер памяти, отвечающий за GC - NULL по умолчанию
 	BasicPool* GC;
 };
+// Мало объявить 'friend' в классе, нужен ещё прототип как обычной функции.
+// иначе: not declared in this scope
+extern SubPool* createFullSubpool(BasicPool* mem);
 
 class MemoryManager: public BasicPool
 {
@@ -280,8 +286,6 @@ public:
 	virtual CELL code_alloc(BfcdInteger size);
 	virtual CELL _code_head();
 
-	// base address
-	CELL _base() {return base;}
 
 	// === GC
 	// mark address allocated

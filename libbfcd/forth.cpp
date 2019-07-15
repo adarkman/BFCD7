@@ -430,9 +430,10 @@ bool VMThreadData::create_word(wchar_t* _name)
 	
 VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 {
-/*	// generate subpool name
+	SubPool *suballoc = createFullSubpool(dynamic_cast<BasicPool*>(allocator));
+	// generate subpool name
 	int nlen=wcslen(name)+wcslen(_subname)+2;
-	WCHAR_P subname=allocator->malloc(nlen*sizeof(wchar_t));
+	WCHAR_P subname=(WCHAR_P)suballoc->malloc(nlen*sizeof(wchar_t));
 	wcscpy(subname,name);
 	wcscat(subname, L" ");
 	wcscat(subname, _subname);
@@ -440,17 +441,17 @@ VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 	
 	VMThreadData* sub=XNEW(allocator,VMThreadData)
 		(subname, shared,
-		 allocator, vocs,
-				 CELL _code, CELL start_IP, CELL _here,
+		 suballoc, vocs,
+		 suballoc->_base(), suballoc->_base(), suballoc->_code_head(),
 		 main_VM_allocator,
 		 SYSTEM_ENCODING,
-		 tib_size=KB(4),
+		 TIB_SIZE,
 		 use_tty,
 		 _trace,
 		 STDIN,STDOUT,STDERR);
 	// Lock to disable changes to self
 	locked=true;
-	*/
+	
 	return NULL;
 }
 
