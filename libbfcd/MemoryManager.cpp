@@ -23,7 +23,7 @@ MemoryManager::MemoryManager(BfcdInteger _vm_code_size, BfcdInteger _vm_data_siz
 	code_head(0)
 {
     pthread_mutex_init(&mutex, NULL);
-	allocatedChunks = new Ptr_Map(0);
+	allocatedChunks = new Ptr_Map(0,&systemAllocator);
 	// Align Code/Data size to PAGE boundary
     int page_count_data = (_vm_data_size/PAGE_SIZE)+1;
     vm_data_size = PAGE_SIZE*page_count_data;
@@ -66,7 +66,7 @@ CELL MemoryManager::malloc(BfcdInteger size)
     pthread_mutex_lock(&mutex);
 	//__CODE(printf("\\ MM::malloc - start %ld\n", size));
     void* p = mspace_malloc(heap, size);
-	(*allocatedChunks)[p]=false;
+	gc_mark_allocated(p);
 	//__CODE(printf("\\ MM::malloc - %p\n", p));
     pthread_mutex_unlock(&mutex);
     return p;
@@ -77,8 +77,8 @@ void MemoryManager::free(CELL ptr)
     if(ptr)
     {
         pthread_mutex_lock(&mutex);
+		gc_mark_freed(ptr);
         mspace_free(heap, ptr);
-		allocatedChunks->erase(ptr);
         pthread_mutex_unlock(&mutex);
     }
 }
@@ -171,15 +171,16 @@ bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
  * SubPool
  */
 
-SubPool::SubPool(CELL _base,BfcdInteger _code_size, BfcdInteger _data_size):
+SubPool::SubPool(CELL _base,BfcdInteger _code_size, BfcdInteger _data_size, MemoryManager* _GC):
     base (_base),
     heap(NULL),
 	code_head(0),
 	code_size(_code_size),
-	data_size(_data_size)
+	data_size(_data_size),
+	GC(_GC)
 {
     pthread_mutex_init(&mutex, NULL);
-	allocatedChunks = new TStack<CELL>(&systemAllocator);
+	selfAllocatedChunks = new Ptr_Map(0,&systemAllocator);
 	heap = create_mspace_with_base(((char*)base)+code_size, data_size, 1);
     if(!heap) throw MSpaceError();
 	// MSPACE tuning
@@ -191,7 +192,6 @@ SubPool::SubPool(CELL _base,BfcdInteger _code_size, BfcdInteger _data_size):
 
 SubPool::~SubPool()
 {
-	if(allocatedChunks) delete allocatedChunks;
     if(heap) destroy_mspace(heap);
     pthread_mutex_destroy(&mutex);
 }
@@ -207,7 +207,7 @@ CELL SubPool::malloc(BfcdInteger size)
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
     void* p = mspace_malloc(heap, size);
-	allocatedChunks->push(p);
+	GC->gc_mark_allocated (p);
     pthread_mutex_unlock(&mutex);
     return p;
 }
@@ -217,6 +217,7 @@ void SubPool::free(CELL ptr)
     if(ptr)
     {
         pthread_mutex_lock(&mutex);
+		GC->gc_mark_freed(ptr);
         mspace_free(heap, ptr);
         pthread_mutex_unlock(&mutex);
     }

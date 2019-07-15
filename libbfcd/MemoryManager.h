@@ -219,6 +219,15 @@ exception (VMOutOfMemory, VMMemoryError);
 #define HERE_ADDR 0x900000000
 #define HERE_DELTA 0x100000000
 
+// Список всех выделенных кусков памяти.
+// Нужен для GC.
+typedef STLAllocator<std::pair<void* const, bool>> Ptr_Map_Allocator;
+typedef std::unordered_map<void*,
+			bool,
+			std::hash<void*>,
+			std::equal_to<void*>,
+			Ptr_Map_Allocator> Ptr_Map;
+
 class MemoryManager: public TAbstractAllocator
 {
 public:
@@ -240,6 +249,15 @@ public:
 
 	// base address
 	CELL _base() {return base;}
+
+	// === GC
+	// mark address allocated
+	void gc_mark_allocated(CELL p) {(*allocatedChunks)[p]=false;}
+	// mark address accessible - must NOT be freed
+	void gc_marc_accessible(CELL p) {(*allocatedChunks)[p]=true;}
+	// mark freed - remove form GC list
+	void gc_mark_freed(CELL p) {allocatedChunks->erase(p);}
+	// ===
 private:
 	bool createDataFile(BfcdInteger _vm_data_size);
 
@@ -255,10 +273,6 @@ protected:
 
 	// Список всех выделенных кусков памяти.
 	// Нужен для GC.
-	typedef std::unordered_map<void*,
-				bool,
-				std::hash<void*>,
-				std::equal_to<void*>> Ptr_Map;
 	Ptr_Map* allocatedChunks;
 };
 
@@ -268,7 +282,7 @@ protected:
 class SubPool: public TAbstractAllocator
 {
 public:
-	SubPool(CELL _base, BfcdInteger _code_size, BfcdInteger _data_size);
+	SubPool(CELL _base, BfcdInteger _code_size, BfcdInteger _data_size, MemoryManager* _GC);
 	virtual ~SubPool();
 	
 	BfcdInteger getFreeSpace();
@@ -285,7 +299,10 @@ protected:
 	pthread_mutex_t mutex;
 	BfcdInteger code_head;
 	BfcdInteger code_size, data_size;
-	TStack<CELL>* allocatedChunks;
+	// Базовый менеджер памяти, отвечающий за GC
+	MemoryManager* GC;
+	// Список выделенных адресов
+	Ptr_Map* selfAllocatedChunks;
 };
 
 #endif //MEMORY_MANAGER_H
