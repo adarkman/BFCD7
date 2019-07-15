@@ -16,14 +16,12 @@ SystemAllocator systemAllocator;
  */
 
 MemoryManager::MemoryManager(BfcdInteger _vm_code_size, BfcdInteger _vm_data_size):
+	BasicPool(NULL,0),
     data_fd (-1),
-    base (NULL),
-    PAGE_SIZE(sysconf(_SC_PAGE_SIZE)),
-    heap(NULL),
-	code_head(0)
+    PAGE_SIZE(sysconf(_SC_PAGE_SIZE))
 {
-    pthread_mutex_init(&mutex, NULL);
-	allocatedChunks = new Ptr_Map(0,&systemAllocator);
+	ptr_sys_alloc = new Ptr_Map_Allocator(&systemAllocator);
+	allocatedChunks = new Ptr_Map(0,*ptr_sys_alloc);
 	// Align Code/Data size to PAGE boundary
     int page_count_data = (_vm_data_size/PAGE_SIZE)+1;
     vm_data_size = PAGE_SIZE*page_count_data;
@@ -39,11 +37,17 @@ MemoryManager::MemoryManager(BfcdInteger _vm_code_size, BfcdInteger _vm_data_siz
 	mspace_track_large_chunks (heap, 1); 
 	// disable additional system memory chunks allocation
 	mspace_set_footprint_limit (heap, 0);
+	locked = false;
+	GC = this;
 }
 
 MemoryManager::~MemoryManager()
 {
-	if(allocatedChunks) delete allocatedChunks;
+	if(allocatedChunks)
+	{
+	   delete allocatedChunks;
+	   delete ptr_sys_alloc;
+	}
     if(heap) destroy_mspace(heap);
     if(base != MAP_FAILED)
     {
@@ -51,7 +55,7 @@ MemoryManager::~MemoryManager()
         munmap(base, vm_code_size+vm_data_size);
     }
     if(data_fd != -1) close(data_fd);
-    pthread_mutex_destroy(&mutex);
+	pthread_mutex_destroy(&mutex);
 }
 
 BfcdInteger MemoryManager::getFreeSpace()
@@ -62,6 +66,7 @@ BfcdInteger MemoryManager::getFreeSpace()
 
 CELL MemoryManager::malloc(BfcdInteger size)
 {
+	if(locked) throw VMAllocatorLocked();
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
 	//__CODE(printf("\\ MM::malloc - start %ld\n", size));
@@ -104,6 +109,7 @@ wchar_t* MemoryManager::wstrdup(const wchar_t* s)
 
 CELL MemoryManager::code_alloc(BfcdInteger size)
 {
+	if(locked) throw VMAllocatorLocked();
 	void* ptr = ((char*)base)+code_head;
 	code_head += size;
 	if (size % sizeof(CELL) != 0) { code_head += sizeof(CELL) - size; }
@@ -167,32 +173,33 @@ bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
     return true;
 }
 
+// Cоздания сабпула на всю оставшуюся память.
+// Внимание ! Используется тот же mspace.
+SubPool* createFullSubpool(BasicPool *mem)
+{
+	CELL new_base=mem->code_alloc(/*PAD*/sizeof(CELL)*2);
+	BfcdInteger new_code_size = mem->vm_code_size-mem->code_head-/*PAD*/sizeof(BfcdInteger)*2;
+	SubPool* sub=new (mem->malloc(sizeof(SubPool))) SubPool(new_base, new_code_size, mem->heap, mem->GC);
+	mem->locked = true;
+	return sub;
+}
+
 /*
  * SubPool
  */
 
-SubPool::SubPool(CELL _base,BfcdInteger _code_size, BfcdInteger _data_size, MemoryManager* _GC):
-    base (_base),
-    heap(NULL),
-	code_head(0),
-	code_size(_code_size),
-	data_size(_data_size),
-	GC(_GC)
+SubPool::SubPool(CELL _code_base, BfcdInteger _code_size, mspace _heap, BasicPool* _GC):
+	BasicPool(_code_base,_code_size)
 {
-    pthread_mutex_init(&mutex, NULL);
-	selfAllocatedChunks = new Ptr_Map(0,&systemAllocator);
-	heap = create_mspace_with_base(((char*)base)+code_size, data_size, 1);
-    if(!heap) throw MSpaceError();
-	// MSPACE tuning
-	// disable separated allocation of large chunks
-	mspace_track_large_chunks (heap, 1); 
-	// disable additional system memory chunks allocation
-	mspace_set_footprint_limit (heap, 0);
+	GC = _GC;
+    heap = _heap;
+	selfAllocatedChunks = XNEW(GC,Ptr_Map)(0,&systemAllocator);
 }
 
 SubPool::~SubPool()
 {
-    if(heap) destroy_mspace(heap);
+	selfAllocatedChunks->~Ptr_Map();
+	GC->free(selfAllocatedChunks);
     pthread_mutex_destroy(&mutex);
 }
 
@@ -207,7 +214,7 @@ CELL SubPool::malloc(BfcdInteger size)
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
     void* p = mspace_malloc(heap, size);
-	GC->gc_mark_allocated (p);
+	gc_mark_allocated (p);
     pthread_mutex_unlock(&mutex);
     return p;
 }
@@ -217,7 +224,7 @@ void SubPool::free(CELL ptr)
     if(ptr)
     {
         pthread_mutex_lock(&mutex);
-		GC->gc_mark_freed(ptr);
+		gc_mark_freed(ptr);
         mspace_free(heap, ptr);
         pthread_mutex_unlock(&mutex);
     }
@@ -242,7 +249,7 @@ CELL SubPool::code_alloc(BfcdInteger size)
 	void* ptr = ((char*)base)+code_head;
 	code_head += size;
 	if (size % sizeof(CELL) != 0) { code_head += sizeof(CELL) - size; }
-	if(code_head>code_size) throw VMOutOfMemory();
+	if(code_head>vm_code_size) throw VMOutOfMemory();
 	return ptr;
 }
 

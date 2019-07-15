@@ -25,6 +25,8 @@ Vocabulary::~Vocabulary()
 	allocator->free(names);
 	words->~WordsMap();
 	allocator->free(words);
+	stl_allocator->~WordsMapAllocator();
+	allocator->free(stl_allocator);
 	pthread_mutex_destroy(&mutex);
 }
 
@@ -231,7 +233,6 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 				 int _STDIN,
 				 int _STDOUT,
 				 int _STDERR):
-	name(_name),
 	shared(_shared),
 	allocator(_allocator),
 	main_VM_allocator(_main_VM_allocator),
@@ -248,8 +249,10 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	tib_index(0),
 	tib_length(0),
 	digit_base(10),
-	last(NULL)
+	last(NULL),
+	locked(false)
 {
+	name=allocator->wstrdup(_name);
 	AS=XNEW(allocator,AStack) (allocator);
 	RS=XNEW(allocator,RStack) (allocator);
 	tib=(char*)allocator->malloc(TIB_SIZE+TIB_PAD);
@@ -286,6 +289,7 @@ VMThreadData::~VMThreadData()
 	allocator->free(RS);
 	allocator->free(tib);
 	allocator->free(word_buffer);
+	allocator->free((void*)name);
 }
 
 // Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
@@ -311,6 +315,7 @@ const wchar_t* VMThreadData::readableName(WordHeader* wh)
 
 void VMThreadData::find_word_to_astack(CONST_WCHAR_P _name)
 {
+	LOCKED;
 	Vocabulary::FindResult res;
 	for(int i=1; i<=local_vocs_order->_size(); i++)
 	{
@@ -323,6 +328,7 @@ void VMThreadData::find_word_to_astack(CONST_WCHAR_P _name)
 
 bool VMThreadData::astack_top2code()
 {
+	LOCKED;
 	BfcdInteger* p=here();
 	if(!allot(sizeof(CELL))) // 1 ALLOT
 	{
@@ -337,6 +343,7 @@ bool VMThreadData::astack_top2code()
 
 bool VMThreadData::astack_top_cfa2code()
 {
+	LOCKED;
 	BFCD_OP cfa=(BFCD_OP)apop();
 	if(!is_valid_for_execute((CELL)cfa))
 	{
@@ -350,6 +357,7 @@ bool VMThreadData::astack_top_cfa2code()
 
 bool VMThreadData::compile_call(CONST_WCHAR_P _name)
 {
+	LOCKED;
 	find_word_to_astack(_name);
 	if(!apop()) // Не нашли, чё за хня ?
 	{
@@ -369,6 +377,7 @@ bool VMThreadData::is_pointer_valid(void* p)
 
 bool VMThreadData::allot(BfcdInteger size)
 {
+	LOCKED;
 	if(size<0) return false;
 	try
 	{
@@ -383,6 +392,7 @@ bool VMThreadData::allot(BfcdInteger size)
 
 wchar_t* VMThreadData::process_str(wchar_t* s)
 {
+	LOCKED;
 	wchar_t* so=allocator->wstrdup(s);
 	wchar_t* res = so;
 	while(*s)
@@ -408,6 +418,7 @@ wchar_t* VMThreadData::process_str(wchar_t* s)
 
 bool VMThreadData::create_word(wchar_t* _name)
 {
+	LOCKED;
 	//BFCD_OP cfa=(BFCD_OP)here;
 	WordHeader *wh=local_vocs_order->_top()->_add_word(_name,NULL);
 	if(_trace>=TRACE_EXEC)
@@ -416,6 +427,33 @@ bool VMThreadData::create_word(wchar_t* _name)
 	last = wh;
 	return true;
 }
+	
+VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
+{
+/*	// generate subpool name
+	int nlen=wcslen(name)+wcslen(_subname)+2;
+	WCHAR_P subname=allocator->malloc(nlen*sizeof(wchar_t));
+	wcscpy(subname,name);
+	wcscat(subname, L" ");
+	wcscat(subname, _subname);
+	//
+	
+	VMThreadData* sub=XNEW(allocator,VMThreadData)
+		(subname, shared,
+		 allocator, vocs,
+				 CELL _code, CELL start_IP, CELL _here,
+		 main_VM_allocator,
+		 SYSTEM_ENCODING,
+		 tib_size=KB(4),
+		 use_tty,
+		 _trace,
+		 STDIN,STDOUT,STDERR);
+	// Lock to disable changes to self
+	locked=true;
+	*/
+	return NULL;
+}
+
 /*
  * Forth low level words
  */

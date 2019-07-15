@@ -153,6 +153,7 @@ enum VM_STATE {VM_EXECUTE=0, VM_COMPILE};
 
 exception (VMDataError, SimpleException);
 exception (IconvInitError, VMDataError);
+exception (ThreadLocked, VMDataError);
 
 // Уровни трасировки
 enum TRACE_LEVELS
@@ -222,6 +223,13 @@ struct VMThreadData
 	// Создание слова
 	bool create_word(wchar_t* _name);
 
+	// Создание нового потока исполнения занимающего всю оставшуюся памать,
+	// используется для защиты от сбоев.
+	// После создания текщий поток приостанавливается, выставляется флаг 'locked'
+	// и управление передаётся порождённому потоку.
+	// При сбое просто удаляется порождённый поток, и текущий продолжает своё выполнение.
+	VMThreadData* fullCloneToSubpool(CONST_WCHAR_P _subname);
+
 //---	
 	// Имя потока
 	CONST_WCHAR_P name;
@@ -268,6 +276,11 @@ struct VMThreadData
 	VocabularyStack* local_vocs_order;
 	// Слово определённое последним в словаре
 	WordHeader* last;
+
+	// Блокировка выделения памяти в текущем потоке,
+	// включается при создании нового потока занимающего всю оставшуюся свободную память.
+	#define LOCKED if(locked) throw ThreadLocked() 
+	bool locked;
 };
 
 #define defword(NAME) bool f_##NAME(VMThreadData *data)

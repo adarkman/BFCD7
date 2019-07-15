@@ -22,6 +22,7 @@
 #include <wchar.h>
 #include <functional> // Инстанциированные темплейты типа std::hash<unsigned int>
 #include <utility>
+#include <unordered_map>
 
 struct SimpleException { virtual ~SimpleException() {} virtual char* operator () ()=0;  };
 #define exception(Name,Parent) struct Name: public Parent { char* Name##_name; \
@@ -215,6 +216,7 @@ exception (VMMemoryError, SimpleException);
 exception (MSpaceError, VMMemoryError);
 exception (VMImageCreationError, VMMemoryError);
 exception (VMOutOfMemory, VMMemoryError);
+exception (VMAllocatorLocked, VMMemoryError);
 
 #define HERE_ADDR 0x900000000
 #define HERE_DELTA 0x100000000
@@ -228,7 +230,38 @@ typedef std::unordered_map<void*,
 			std::equal_to<void*>,
 			Ptr_Map_Allocator> Ptr_Map;
 
-class MemoryManager: public TAbstractAllocator
+class SubPool;
+class BasicPool: public TAbstractAllocator
+{
+public:	
+	BasicPool(CELL _base, BfcdInteger _code_size): base(_base),heap(NULL),
+		vm_code_size(_code_size),code_head(0),locked(false), GC(NULL)
+	{
+		pthread_mutex_init(&mutex,NULL);
+	}
+	virtual ~BasicPool() {}
+
+	virtual void gc_mark_allocated(CELL p)=0;
+	virtual void gc_mark_accessible(CELL p)=0;
+	virtual void gc_mark_freed(CELL p)=0;
+
+	// Cоздания сабпула на всю оставшуюся память.
+	// Внимание ! Используется тот же mspace.
+	friend SubPool* createFullSubpool(BasicPool* mem);
+	
+protected:	
+	BfcdInteger vm_code_size;
+	pthread_mutex_t mutex;
+	CELL base;
+	mspace heap;
+	BfcdInteger code_head;		// Top index in *base for code allocation 
+	// Блокировка любых выделений памяти, при созданном полном сабпуле.
+	bool locked;
+	// Базовый менеджер памяти, отвечающий за GC - NULL по умолчанию
+	BasicPool* GC;
+};
+
+class MemoryManager: public BasicPool
 {
 public:
 	MemoryManager(BfcdInteger _vm_code_size = MB(128), BfcdInteger _vm_data_size = MB(128) );
@@ -252,37 +285,35 @@ public:
 
 	// === GC
 	// mark address allocated
-	void gc_mark_allocated(CELL p) {(*allocatedChunks)[p]=false;}
+	virtual void gc_mark_allocated(CELL p) {(*allocatedChunks)[p]=false;}
 	// mark address accessible - must NOT be freed
-	void gc_marc_accessible(CELL p) {(*allocatedChunks)[p]=true;}
-	// mark freed - remove form GC list
-	void gc_mark_freed(CELL p) {allocatedChunks->erase(p);}
+	virtual void gc_mark_accessible(CELL p) {(*allocatedChunks)[p]=true;}
+	// mark freed - remove from GC list
+	virtual void gc_mark_freed(CELL p) {allocatedChunks->erase(p);}
 	// ===
+	
 private:
 	bool createDataFile(BfcdInteger _vm_data_size);
 
 protected:
-	BfcdInteger vm_code_size;
 	BfcdInteger vm_data_size;
 	int data_fd;
-	CELL base;
 	long PAGE_SIZE;
-	mspace heap;
-	pthread_mutex_t mutex;
-	BfcdInteger code_head;		// Top index in *base for code allocation 
 
 	// Список всех выделенных кусков памяти.
 	// Нужен для GC.
+	Ptr_Map_Allocator* ptr_sys_alloc;
 	Ptr_Map* allocatedChunks;
 };
 
 /*
  * Пул внутри MemoryManager - для Task/Thread
  */
-class SubPool: public TAbstractAllocator
+class SubPool: public BasicPool
 {
 public:
-	SubPool(CELL _base, BfcdInteger _code_size, BfcdInteger _data_size, MemoryManager* _GC);
+	SubPool(CELL _code_base, BfcdInteger _code_size, 
+			mspace _heap, BasicPool* _GC);
 	virtual ~SubPool();
 	
 	BfcdInteger getFreeSpace();
@@ -293,14 +324,11 @@ public:
 	virtual CELL code_alloc(BfcdInteger size);
 	virtual CELL _code_head();
 
+	virtual void gc_mark_allocated(CELL p) {if(GC) GC->gc_mark_allocated(p); }
+	virtual void gc_mark_accessible(CELL p) {if(GC) GC->gc_mark_accessible(p); }
+	virtual void gc_mark_freed(CELL p) {if(GC) GC->gc_mark_freed(p); }
+
 protected:
-	CELL base;
-	mspace heap;
-	pthread_mutex_t mutex;
-	BfcdInteger code_head;
-	BfcdInteger code_size, data_size;
-	// Базовый менеджер памяти, отвечающий за GC
-	MemoryManager* GC;
 	// Список выделенных адресов
 	Ptr_Map* selfAllocatedChunks;
 };
