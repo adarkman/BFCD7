@@ -224,6 +224,8 @@ struct VMThreadData
 
 	// Создание слова
 	bool create_word(wchar_t* _name);
+	// Создание локального словаря
+	bool create_vocabulary(wchar_t* _name); 
 
 	// Создание нового потока исполнения занимающего всю оставшуюся памать,
 	// используется для защиты от сбоев.
@@ -274,7 +276,7 @@ struct VMThreadData
 	// База счисления слов при вводе/выводе
 	BfcdInteger digit_base;
 
-	// Список _всех_ словарей - общий для всех потоков.
+	// Список словарей предка.
 	VocabularyStack* vocs;
 	// Локальный для потока порядок поиска в словарях. 
 	VocabularyStack* local_vocs_order;

@@ -183,7 +183,18 @@ public:
 		//
 		return top->item;
 	}
-	
+
+	TStack<T>* clone()
+	{
+		TStack<T> *ns=XNEW(allocator,TStack<T>)(allocator);
+		TStackElement* e=start->next;
+		while(e) 
+		{
+			ns->push(e->item);
+			e=e->next;
+		}
+		return ns;
+	}
 };
 
 /*

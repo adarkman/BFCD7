@@ -241,7 +241,7 @@ VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
 	allocator(_allocator),
 	main_VM_allocator(_main_VM_allocator),
 	vocs(_vocs),
-	local_vocs_order(_vocs),
+	local_vocs_order(_vocs->clone()),
 	code(_code),
 	IP((BFCD_OP)start_IP),
 	vm_state(VM_EXECUTE),
@@ -436,6 +436,14 @@ bool VMThreadData::create_word(wchar_t* _name)
 	last = wh;
 	return true;
 }
+
+bool VMThreadData::create_vocabulary(wchar_t* _name)
+{
+	LOCKED;
+	Vocabulary* nv=XNEW(allocator,Vocabulary)(allocator, _name);
+	local_vocs_order->push(nv);
+	return true;
+}
 	
 void VMThreadData::lock()
 {
@@ -470,7 +478,10 @@ VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 		 _trace,
 		 STDIN,STDOUT,STDERR);
 	allocator->free(subname);
-	// Lock to disable changes to self
+	// Собственный словарь для сабпула, т.к. предок будет залочен
+	sub->create_vocabulary((WCHAR_P)_subname);
+	// Lock self to disable changes, unlock will be done something else,
+	// see (EXECUTE-PTROTECTED) as example
 	lock();
 
 	return sub;
