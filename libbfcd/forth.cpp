@@ -223,9 +223,9 @@ char* libedit_prompt(EditLine* el)
  * VMThreadData
  */
 VMThreadData::VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
-				 TAbstractAllocator* _allocator, VocabularyStack *_vocs,
+				 BasicPool* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP, CELL _here,
-				 TAbstractAllocator* _main_VM_allocator,
+				 BasicPool* _main_VM_allocator,
 				 const char* _SYSTEM_ENCODING,
 				 BfcdInteger _tib_size,
 				 bool _use_tty,
@@ -430,7 +430,7 @@ bool VMThreadData::create_word(wchar_t* _name)
 	
 VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 {
-	SubPool *suballoc = createFullSubpool(dynamic_cast<BasicPool*>(allocator));
+	SubPool *suballoc = createFullSubpool(allocator);
 	// generate subpool name
 	int nlen=wcslen(name)+wcslen(_subname)+2;
 	WCHAR_P subname=(WCHAR_P)allocator->malloc(nlen*sizeof(wchar_t));

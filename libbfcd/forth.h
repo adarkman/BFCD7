@@ -173,9 +173,9 @@ char* libedit_prompt(EditLine*);
 struct VMThreadData
 {
 	VMThreadData(CONST_WCHAR_P _name, TSharedData *_shared,
-				 TAbstractAllocator* _allocator, VocabularyStack *_vocs,
+				 BasicPool* _allocator, VocabularyStack *_vocs,
 				 CELL _code, CELL start_IP, CELL _here,
-				 TAbstractAllocator* _main_VM_allocator,
+				 BasicPool* _main_VM_allocator,
 				 const char *_SYSTEM_ENCODING,
 				 BfcdInteger _tib_size=KB(4),
 				 bool _use_tty = false,
@@ -236,9 +236,9 @@ struct VMThreadData
 	// Общие данные всех потоков
 	TSharedData *shared;
 	// Локальный аллокатор потока
-	TAbstractAllocator *allocator;
+	BasicPool *allocator;
 	// Глобальный аллокатор VM, используется для проверки валидности указателей.
-	TAbstractAllocator *main_VM_allocator;
+	BasicPool *main_VM_allocator;
 
 	AStack *AS;			// Арифметический стек
 	RStack *RS;			// Стек возврата	

@@ -40,7 +40,7 @@ CCFLAGS=-std=c++17 -g -O2 -fPIC -pthread $(INCLUDE_DIRS) $(CFLAGS) -DDATA_DIR=\"
 	-DBASE_COMPILER=\"$(BFCD_DATA_DIR)/$(NAME)\" -D_GNU_SOURCE $(CADDFLAGS) $(CFLAGS) $(WARN_FLAGS)
 
 CCOPT=-fomit-frame-pointer -finline-functions -fstrength-reduce \
-	-funroll-loops 
+	-funroll-loops -fno-rtti 
 
 %.o: %.c
 	$(CC) $(CCOPT) $(CCFLAGS) -c $<
