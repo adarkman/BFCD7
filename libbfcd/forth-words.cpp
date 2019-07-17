@@ -104,6 +104,9 @@ defword(print_info)
 		words_count+=v->words_count();
 	}
 	printf("\n%ld words in vocabularies.\n", words_count);
+	printf("Code top: %p\n", data->here());
+	printf("Available %lld code words.\n", data->allocator->_code_avail()/sizeof(BFCD_OP));
+	printf("Available memory: %lld (%.2lfKb).\n", data->allocator->data_available(), data->allocator->data_available()/1024.0);
 	return true;
 }
 

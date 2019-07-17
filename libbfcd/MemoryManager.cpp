@@ -58,16 +58,10 @@ MemoryManager::~MemoryManager()
 	pthread_mutex_destroy(&mutex);
 }
 
-BfcdInteger MemoryManager::getFreeSpace()
-{
-    mallinfo info = mspace_mallinfo(heap);
-    return info.fordblks;
-}
-
 CELL MemoryManager::malloc(BfcdInteger size)
 {
 	if(locked) throw VMAllocatorLocked();
-    if(size>=getFreeSpace()) throw VMOutOfMemory();
+    if(size>=data_available()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
 	//__CODE(printf("\\ MM::malloc - start %ld\n", size));
     void* p = mspace_malloc(heap, size);

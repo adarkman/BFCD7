@@ -41,7 +41,9 @@ public:
 	virtual wchar_t* wstrdup(const wchar_t*)=0;
 	virtual CELL code_alloc(BfcdInteger size)=0;
 	virtual CELL _code_head()=0;
+	virtual BfcdInteger _code_avail()=0;
 	virtual bool is_address_valid(void*) {return true;}
+	virtual BfcdInteger data_available()=0;
 
 	virtual ~TAbstractAllocator() {}
 };
@@ -59,6 +61,8 @@ public:
 	virtual wchar_t* wstrdup(const wchar_t *s) {return ::wcsdup(s);}
 	virtual CELL code_alloc(BfcdInteger size) {return NULL;}
 	virtual CELL _code_head() {return NULL;}
+	virtual BfcdInteger _code_avail() {return 0;}
+	virtual BfcdInteger data_available() {return 0;}
 	virtual ~SystemAllocator() {}
 };
 
@@ -281,7 +285,16 @@ public:
 	virtual void unlock() { locked=false; }
 
 	virtual BasicPool* _GC() { return GC; }
+
+	virtual BfcdInteger _code_avail() { return vm_code_size-code_head; }
 	
+	virtual BfcdInteger data_available()
+	{
+		if(!heap) return 0;
+		mallinfo info = mspace_mallinfo(heap);
+		return info.fordblks;
+	}
+
 protected:	
 	BfcdInteger vm_code_size;
 	pthread_mutex_t mutex;
@@ -304,7 +317,6 @@ public:
 	virtual ~MemoryManager();
 
 	// Data allocation
-	BfcdInteger getFreeSpace();
 	virtual CELL malloc(BfcdInteger size);
 	virtual void free(CELL ptr);
 	virtual bool is_address_valid(void* p);
