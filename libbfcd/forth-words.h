@@ -17,6 +17,10 @@ defword(load_history);		// !hl
 //********************************************************** Восстановление после сбоев
 defword(dropall);			// dropall
 defword(rdropall);			// Rdropall
+defword(protected_exec);	// (EXECUTE-PROTECTED) - слово исполняется с перехватом всех исключений
+							// всегда возвращает 'true'. В основном используется в контексте 
+							// сабпулов или потоков исполнения
+defword(subpool_start);		// !subpool: <name> <startup_word>
 
 #endif // FORTH_WORDS_H
 

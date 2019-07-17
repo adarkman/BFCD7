@@ -223,13 +223,27 @@ exception (VMAllocatorLocked, VMMemoryError);
 
 // Список всех выделенных кусков памяти.
 // Нужен для GC.
-typedef STLAllocator<std::pair<void* const, bool>> Ptr_Map_Allocator;
+struct GCD
+{
+	bool reachable;
+	mspace heap;
+	CELL p;
+
+	GCD():reachable(false), heap(0), p(NULL) {}
+	GCD(mspace _heap, CELL _p): reachable(false), heap(_heap), p(_p) {}
+
+	bool is_empty() { return heap == 0; }
+};
+typedef STLAllocator<std::pair<void* const, GCD>> Ptr_Map_Allocator;
 typedef std::unordered_map<void*,
-			bool,
+			GCD,
 			std::hash<void*>,
 			std::equal_to<void*>,
 			Ptr_Map_Allocator> Ptr_Map;
 
+/*
+ * Базовый пул.
+ */
 class SubPool;
 class BasicPool: public TAbstractAllocator
 {
@@ -241,7 +255,7 @@ public:
 	}
 	virtual ~BasicPool() {}
 
-	virtual void gc_mark_allocated(CELL p)=0;
+	virtual void gc_mark_allocated(mspace ms, CELL p)=0;
 	virtual void gc_mark_accessible(CELL p)=0;
 	virtual void gc_mark_freed(CELL p)=0;
 
@@ -251,6 +265,12 @@ public:
 	// Cоздания сабпула на всю оставшуюся память.
 	// Внимание ! Используется тот же mspace.
 	friend SubPool* createFullSubpool(BasicPool* mem);
+
+	// Lock flag
+	virtual void lock() { locked=true; }
+	virtual void unlock() { locked=false; }
+
+	virtual BasicPool* _GC() { return GC; }
 	
 protected:	
 	BfcdInteger vm_code_size;
@@ -289,9 +309,9 @@ public:
 
 	// === GC
 	// mark address allocated
-	virtual void gc_mark_allocated(CELL p) {(*allocatedChunks)[p]=false;}
+	virtual void gc_mark_allocated(mspace ms, CELL p) {(*allocatedChunks)[p]=GCD(ms,p);}
 	// mark address accessible - must NOT be freed
-	virtual void gc_mark_accessible(CELL p) {(*allocatedChunks)[p]=true;}
+	virtual void gc_mark_accessible(CELL p) {(*allocatedChunks)[p].reachable=true;}
 	// mark freed - remove from GC list
 	virtual void gc_mark_freed(CELL p) {allocatedChunks->erase(p);}
 	// ===
@@ -328,7 +348,7 @@ public:
 	virtual CELL code_alloc(BfcdInteger size);
 	virtual CELL _code_head();
 
-	virtual void gc_mark_allocated(CELL p) {if(GC) GC->gc_mark_allocated(p); }
+	virtual void gc_mark_allocated(mspace ms,CELL p) {if(GC) GC->gc_mark_allocated(ms,p); }
 	virtual void gc_mark_accessible(CELL p) {if(GC) GC->gc_mark_accessible(p); }
 	virtual void gc_mark_freed(CELL p) {if(GC) GC->gc_mark_freed(p); }
 

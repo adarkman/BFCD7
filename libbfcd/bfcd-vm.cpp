@@ -118,6 +118,8 @@ void BfcdVM::create_base_vocabulary()
 	_(L"!hl", load_history);
 	_(L"dropall", dropall);
 	_(L"Rdropall", rdropall);
+	_(L"(EXECUTE-PROTECTED)",protected_exec);
+	_(L"!subpool:", subpool_start);
 }
 #undef _
 

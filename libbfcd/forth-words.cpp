@@ -48,3 +48,50 @@ defword(rdropall)
 	return true;
 }
 
+// (EXECUTE-PROTECTED)
+defword(protected_exec)
+{
+	//try
+	{
+		// CFA on stack
+		f_execute(data);
+	}
+	/*catch (SimpleException &ex)
+	{
+		printf("\t\t\t\tError in thread \"%ls\": %s\n", data->name, ex());
+	}*/
+	return true;
+}
+
+//!subpool:
+defword(subpool_start)
+{
+	_do(bl);
+	_do(word);
+	WCHAR_P name=data->allocator->wstrdup((WCHAR_P)data->apop());
+	_do(bl);
+	_do(word);
+	WCHAR_P startup_name = (WCHAR_P) data->AS->_top();
+	if(data->_trace>=TRACE_IN_C_WORDS)
+		printf("\t\t\t\t| !subpool: %ls %ls\n", name, startup_name);
+	_do(find);
+	if(!data->apop()) // Startup word not found
+	{
+		printf("!subpool: - startup word '%ls' not found.\n", startup_name);
+		return false;
+	}
+	CELL cfa = (CELL)data->apop(); // CFA от f_find
+	VMThreadData* new_pool = data->fullCloneToSubpool(name);
+	// current pool locked, push CFA to new stack
+	new_pool->apushp(cfa);
+	// start in new pool
+	f_protected_exec(new_pool);
+	// unlock pool
+	data->unlock();
+	data->allocator->free(name);
+	return true;
+}
+
+
+
+

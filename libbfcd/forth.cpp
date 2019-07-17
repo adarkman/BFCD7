@@ -59,11 +59,15 @@ WordHeader*	Vocabulary::_add_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger 
 	return wh;
 }
 
-WordHeader* Vocabulary::cfa2wh(BFCD_OP* CFA)
+WordHeader* Vocabulary::cfa2wh(BasicPool* allocator, BFCD_OP* CFA)
 {
 	char *p=(char*)CFA;
 	WordHeader* wh = (WordHeader*) (p-sizeof(WordHeader)); // Минус, не ->
-	return wh->MARK==WH_MARK?wh:NULL; // Проверяем что смотрим на корректный WordHeader
+	// Проверяем что смотрим на корректный WordHeader
+	if(allocator->is_address_valid(wh) && wh->MARK==WH_MARK)
+		return wh;
+	else
+		return NULL;
 }
 
 WordHeader*	Vocabulary::_add_binary_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger _flags)
@@ -375,6 +379,11 @@ bool VMThreadData::is_pointer_valid(void* p)
 	return main_VM_allocator->is_address_valid(p);
 }
 
+WordHeader* VMThreadData::cfa2wh(BFCD_OP* cfa)
+{
+	return Vocabulary::cfa2wh(main_VM_allocator, cfa);
+}
+
 bool VMThreadData::allot(BfcdInteger size)
 {
 	LOCKED;
@@ -428,6 +437,18 @@ bool VMThreadData::create_word(wchar_t* _name)
 	return true;
 }
 	
+void VMThreadData::lock()
+{
+	allocator->lock();
+	locked=true;
+}
+
+void VMThreadData::unlock()
+{
+	allocator->unlock();
+	locked=false;
+}
+
 VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 {
 	SubPool *suballoc = createFullSubpool(allocator);
@@ -438,7 +459,6 @@ VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 	wcscat(subname, L" ");
 	wcscat(subname, _subname);
 	//
-	
 	VMThreadData* sub=XNEW(allocator,VMThreadData)
 		(subname, shared,
 		 suballoc, vocs,
@@ -451,9 +471,9 @@ VMThreadData* VMThreadData::fullCloneToSubpool(CONST_WCHAR_P _subname)
 		 STDIN,STDOUT,STDERR);
 	allocator->free(subname);
 	// Lock to disable changes to self
-	locked=true;
-		
-	return NULL;
+	lock();
+
+	return sub;
 }
 
 /*
@@ -565,7 +585,7 @@ defword(execute)
 	if(!*fn) return false; // *СFA смотрит в неаллоцированную область
 	if(data->_trace>=TRACE_EXEC)
 	{
-		WordHeader *wh = Vocabulary::cfa2wh(fn);
+		WordHeader *wh = data->cfa2wh(fn);
 		if(wh)
 			printf("\t\t\t\t*** %ls\n", data->readableName(wh));			
 	}
@@ -573,7 +593,7 @@ defword(execute)
 #pragma GCC diagnostic ignored "-Wpointer-arith"
 	// ВНИМАТЕЛЬНО с адресной арифметикой, не везде очевидные смещения !
 	data->rpush(data->IP+sizeof(BFCD_OP)); // На стеке возврата адрес следующего слова
-	WordHeader* wh=Vocabulary::cfa2wh(fn);
+	WordHeader* wh=data->cfa2wh(fn);
 	if(!wh) // Не найден WH_MARK -> CFA липовый, во избежание SIGSEGV
 		FAILED(VM_CFA_WH_NOT_LINKED)
 	data->IP = (BFCD_OP)fn; // В случае форт-слова IP:=CFA
@@ -900,12 +920,20 @@ defword(print_rstack)
 	if(!data->RS->_size())
 		puts("\t\t\t\t| Rstack empty.");
 	for(int i=1; i<=data->RS->_size(); i++)
-		printf("\t\t\t\t| R[%d]: %lx %ld\n", i, data->RS->nth(i), data->RS->nth(i));
+	{
+		CELL v = data->RS->nth(i);
+		WCHAR_P wname=NULL;
+		if(data->is_pointer_valid(v))
+		{
+			WordHeader* wh=data->cfa2wh((BFCD_OP*)v);
+			if(wh) wname=(WCHAR_P)data->readableName(wh);
+		}
+		printf("\t\t\t\t| R[%d]: %lx %ld %ls\n", i, data->RS->nth(i), data->RS->nth(i), wname);
+	}
 	return true;
 }
 
 // STEP
-#define _do(__code) { if(!f_##__code(data)) return false; } 
 defword(step)
 {
 	if(data->_trace>=TRACE_STACK) _do(print_stack);
@@ -944,7 +972,6 @@ defword(step)
 	}
 	return true;
 }
-//#undef _do
 
 // INTERPRET
 defword(interpret)
@@ -953,7 +980,7 @@ defword(interpret)
 	{
 		if(data->_trace>=TRACE_EXEC)
 			printf("\t\t\t\t| step - Thread: \"%ls\" IP: %p Head: %p\n", data->name, data->IP, data->here());
-		try
+		//try
 		{
 			if(!f_step(data)) 
 			{
@@ -975,11 +1002,11 @@ defword(interpret)
 				}
 			}
 		}
-		catch (SimpleException &ex)
+		/*catch (SimpleException &ex)
 		{
 			printf("\t\t\t\tError in thread \"%ls\": %s\n", data->name, ex());
 			return false;
-		}
+		}*/
 	}
 }
 
@@ -1104,12 +1131,12 @@ defword(word_end_def)
 defword(decompile)
 {
 	BFCD_OP* cfa = (BFCD_OP*)data->apop();
-	if(!data->is_pointer_valid(cfa) || !Vocabulary::cfa2wh(cfa))
+	if(!data->is_pointer_valid(cfa) || !data->cfa2wh(cfa))
 	{
 		printf("DECOMPILE - invalid CFA: %p\n", cfa);
 		return true;
 	}
-	WordHeader *wh = Vocabulary::cfa2wh(cfa);
+	WordHeader *wh = data->cfa2wh(cfa);
 	BFCD_OP* end=wh->end;
 	if(!end)
 	{
@@ -1123,7 +1150,7 @@ defword(decompile)
 	while(cfa<end)
 	{
 		wh=NULL;
-		if (data->is_pointer_valid((void*)*cfa)) wh=Vocabulary::cfa2wh((BFCD_OP*)*cfa);
+		if (data->is_pointer_valid((void*)*cfa)) wh=data->cfa2wh((BFCD_OP*)*cfa);
 		if(!wh) printf("%p: %lx %ld\n", cfa, *cfa, *cfa);
 		else
 			printf("%p: %p %ls\n", cfa, *cfa, data->readableName(wh));

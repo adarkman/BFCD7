@@ -71,7 +71,7 @@ CELL MemoryManager::malloc(BfcdInteger size)
     pthread_mutex_lock(&mutex);
 	//__CODE(printf("\\ MM::malloc - start %ld\n", size));
     void* p = mspace_malloc(heap, size);
-	gc_mark_allocated(p);
+	gc_mark_allocated(heap,p);
 	//__CODE(printf("\\ MM::malloc - %p\n", p));
     pthread_mutex_unlock(&mutex);
     return p;
@@ -82,8 +82,12 @@ void MemoryManager::free(CELL ptr)
     if(ptr)
     {
         pthread_mutex_lock(&mutex);
-		gc_mark_freed(ptr);
-        mspace_free(heap, ptr);
+		auto gcd=allocatedChunks->find(ptr);
+		if(gcd!=allocatedChunks->end())
+		{
+			gc_mark_freed(ptr);
+    	    mspace_free(gcd->second.heap, gcd->second.p);
+		}
         pthread_mutex_unlock(&mutex);
     }
 }
@@ -180,7 +184,6 @@ SubPool* createFullSubpool(BasicPool *mem)
 	CELL new_base=mem->code_alloc(/*PAD*/sizeof(CELL)*2);
 	BfcdInteger new_code_size = mem->vm_code_size-mem->code_head-/*PAD*/sizeof(BfcdInteger)*2;
 	SubPool* sub=new (mem->malloc(sizeof(SubPool))) SubPool(new_base, new_code_size, mem->heap, mem->GC);
-	mem->locked = true;
 	return sub;
 }
 
@@ -211,10 +214,11 @@ BfcdInteger SubPool::getFreeSpace()
 
 CELL SubPool::malloc(BfcdInteger size)
 {
+	if(locked) throw VMAllocatorLocked();
     if(size>=getFreeSpace()) throw VMOutOfMemory();
     pthread_mutex_lock(&mutex);
     void* p = mspace_malloc(heap, size);
-	gc_mark_allocated (p);
+	gc_mark_allocated (heap,p);
     pthread_mutex_unlock(&mutex);
     return p;
 }
@@ -224,8 +228,11 @@ void SubPool::free(CELL ptr)
     if(ptr)
     {
         pthread_mutex_lock(&mutex);
-		gc_mark_freed(ptr);
-        mspace_free(heap, ptr);
+		if(selfAllocatedChunks->find(ptr)!=selfAllocatedChunks->end()) // Allocated by self
+		{
+			gc_mark_freed(ptr);
+    	    mspace_free(heap, ptr);
+		}
         pthread_mutex_unlock(&mutex);
     }
 }

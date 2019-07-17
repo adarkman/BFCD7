@@ -62,7 +62,7 @@ struct Vocabulary
 	WordHeader* _add_binary_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger _flags=0);
 
 	// CFA -> WordHeader
-	static WordHeader* cfa2wh(BFCD_OP* CFA);
+	static WordHeader* cfa2wh(BasicPool* allocator, BFCD_OP* CFA);
 
 	typedef std::pair<int, WordHeader*> FindResult;
 	// Поиск только в текущем словаре
@@ -209,6 +209,8 @@ struct VMThreadData
 	bool astack_top_cfa2code();
 	// Компилируем слово по имени
 	bool compile_call(CONST_WCHAR_P _name);
+	// Получаем WordHeader* по CFA
+	WordHeader* cfa2wh(BFCD_OP* cfa);
 
 	// Проверяет что адрес исполнения есть в словарях (во избежание SIGSEGV)
 	// требует постоянной доработки
@@ -229,6 +231,8 @@ struct VMThreadData
 	// и управление передаётся порождённому потоку.
 	// При сбое просто удаляется порождённый поток, и текущий продолжает своё выполнение.
 	VMThreadData* fullCloneToSubpool(CONST_WCHAR_P _subname);
+	void lock();
+	void unlock();
 
 //---	
 	// Имя потока
@@ -301,6 +305,8 @@ protected:
  */
 // Используется вместо 'return false' внутри бинарных слов
 #define FAILED(__errno__) {data->_errno=__errno__; return false; }
+// 
+#define _do(__code) { if(!f_##__code(data)) return false; } 
 //********************************************************** Базовые
 //слова
 defword(bl); 		// BL
