@@ -175,7 +175,8 @@ bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
 // Внимание ! Используется тот же mspace.
 SubPool* createFullSubpool(BasicPool *mem)
 {
-	CELL new_base=mem->code_alloc(/*PAD*/sizeof(CELL)*2);
+	//CELL new_base=mem->code_alloc(/*PAD*/sizeof(CELL)*2);
+	CELL new_base=mem->code_alloc(0);
 	BfcdInteger new_code_size = mem->vm_code_size-mem->code_head-/*PAD*/sizeof(BfcdInteger)*2;
 	SubPool* sub=new (mem->malloc(sizeof(SubPool))) SubPool(new_base, new_code_size, mem->heap, mem->GC);
 	return sub;
