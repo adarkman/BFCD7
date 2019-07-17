@@ -75,6 +75,10 @@ struct Vocabulary
 	bool check_CFA(BFCD_OP cfa);
 	// Имя слова по WordHeader
 	const wchar_t* getName(WordHeader* wh) { return names->get(wh->name); }
+	// Читаемое имя словаря
+	CONST_WCHAR_P readableName() { return names->get(name); }
+	// Количество слов в словаре
+	BfcdInteger words_count() { return words_in_order->_size(); }
 //---	
 protected:
 	WStringHash::UID name;
@@ -97,8 +101,10 @@ protected:
 	WordsMapAllocator* stl_allocator;
 	// Хеш имён слов
 	WStringHash* names;
-	// Собственно список слов в словаре
+	// Собственно список слов в словаре, быстрый хеш
 	WordsMap* words;
+	// Слова в словаре в порядке определения, как положено в Форте
+	TStack<WordHeader*>* words_in_order;
 };
 
 /*

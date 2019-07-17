@@ -92,6 +92,20 @@ defword(subpool_start)
 	return true;
 }
 
+defword(print_info)
+{
+	printf("Thread name: \"%ls\"\n",data->name);
+	printf("Local vocabularies: ");
+	int words_count=0;
+	for(int i=1; i<=data->local_vocs_order->_size(); i++) 
+	{
+		Vocabulary *v=data->local_vocs_order->nth(i);
+		printf("\"%ls\" ",v->readableName());
+		words_count+=v->words_count();
+	}
+	printf("\n%ld words in vocabularies.\n", words_count);
+	return true;
+}
 
 
 

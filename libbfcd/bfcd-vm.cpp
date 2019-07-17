@@ -120,6 +120,7 @@ void BfcdVM::create_base_vocabulary()
 	_(L"Rdropall", rdropall);
 	_(L"(EXECUTE-PROTECTED)",protected_exec);
 	_(L"!subpool:", subpool_start);
+	_(L"!info", print_info);
 }
 #undef _
 

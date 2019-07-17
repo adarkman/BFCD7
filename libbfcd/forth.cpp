@@ -16,6 +16,7 @@ Vocabulary::Vocabulary (TAbstractAllocator* _alloc, CONST_WCHAR_P _name):
 	name=names->insert(_name);
 	stl_allocator = XNEW(allocator,WordsMapAllocator) (allocator);
 	words=XNEW(allocator,WordsMap)(0, *stl_allocator);
+	words_in_order=XNEW(allocator,TStack<WordHeader*>) (allocator);
 	pthread_mutex_init(&mutex, NULL); 
 }
 
@@ -25,6 +26,8 @@ Vocabulary::~Vocabulary()
 	allocator->free(names);
 	words->~WordsMap();
 	allocator->free(words);
+	words_in_order->~TStack<WordHeader*>();
+	allocator->free(words_in_order);
 	stl_allocator->~WordsMapAllocator();
 	allocator->free(stl_allocator);
 	pthread_mutex_destroy(&mutex);
@@ -54,6 +57,7 @@ WordHeader*	Vocabulary::_add_word(CONST_WCHAR_P _name, BFCD_OP CFA, BfcdInteger 
 	__CODE(printf("\\ insert '%ls' in Vocabulary::words\n", names->get(wh->name)));
 	// WordHeader в словарь
 	(*words)[wh->name] = wh; // Вариант: words->insert(std::make_pair(wh->name,wh));
+	words_in_order->push(wh);
 	//
 	pthread_mutex_unlock(&mutex);
 	return wh;
@@ -651,7 +655,7 @@ defword(read_tib)
 	else // Read from terminal (interactive mode)
 	{
 		char prompt[256];
-		snprintf(prompt,255,"%ls%s> ", data->name, data->vm_state==VM_COMPILE?"(COMPILE)":"");
+		snprintf(prompt,255,"(%ls%s)> ", data->name, data->vm_state==VM_COMPILE?"(COMPILE)":"");
 		// Мутексы обязательны - запросы
 		// от разных VM Thread не должны лезть на терминал одновременно
 		pthread_mutex_lock(&data->shared->readline_mutex);

@@ -183,7 +183,6 @@ public:
 		//
 		return top->item;
 	}
-
 	TStack<T>* clone()
 	{
 		TStack<T> *ns=XNEW(allocator,TStack<T>)(allocator);

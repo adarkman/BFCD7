@@ -21,6 +21,7 @@ defword(protected_exec);	// (EXECUTE-PROTECTED) - слово исполняет�
 							// всегда возвращает 'true'. В основном используется в контексте 
 							// сабпулов или потоков исполнения
 defword(subpool_start);		// !subpool: <name> <startup_word>
+defword(print_info);		// !info
 
 #endif // FORTH_WORDS_H
 
