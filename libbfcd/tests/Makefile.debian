@@ -1,4 +1,0 @@
-all:
-	make GNATMAKE=gnatmake GNATBIND=gnatbind GNATLINK=gnatlink
-
-

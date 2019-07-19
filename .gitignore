@@ -43,4 +43,5 @@ ada-libs/florist_3.5.0_20040403.src/posix-xti.adb
 ada-libs/florist_3.5.0_20040403.src/posix.ads
 src/bfcd7
 /libbfcd/tests/memory_manager_test
+/.old
 
