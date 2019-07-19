@@ -198,6 +198,17 @@ public:
 		}
 		return ns;
 	}
+	// Вызывает функцию для каждого элемента стека начиная с 'top',
+	// прекращает перебор если фунция возвращает 'true'
+	void traverse_from_top(std::function<bool(T)> fn)
+	{
+		TStackElement *e = top;
+		while (e!=start)
+		{
+			if(fn(e->item)) return;
+			e=e->prev;
+		}
+	}
 };
 
 /*

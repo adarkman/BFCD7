@@ -118,17 +118,18 @@ find_all_chain_T(WStringHash::UID);
 bool Vocabulary::check_CFA(BFCD_OP cfa)
 {
 	Vocabulary* curr = this;
-	while(curr)
-	{
-		WordHeader* wh = curr->last;
-		while(wh)
-		{
-			if(*wh->CFA == cfa) return true;
-			wh = wh->prev;
-		}
-		curr = curr->prev;
-	}
-	return false;
+	bool found=false;
+	words_in_order->traverse_from_top([&found,cfa](WordHeader* e) -> bool
+									  { 
+									  	if(e->CFA==(BFCD_OP*)cfa)
+										{
+											found=true;
+											return true;
+										}
+										else
+											return false;
+									  });
+	return found;
 }
 
 /*
@@ -306,11 +307,11 @@ VMThreadData::~VMThreadData()
 bool VMThreadData::is_valid_for_execute(void* fn)
 {
 #ifdef __DEBUG__
-/*	for(int i=1; i<=vocs->_size(); i++)
+	for(int i=1; i<=vocs->_size(); i++)
 		if(vocs->nth(i)->check_CFA((BFCD_OP)fn)) return true;
 	for(int i=1; i<=local_vocs_order->_size(); i++)
 		if(local_vocs_order->nth(i)->check_CFA((BFCD_OP)fn)) return true;
-	return false;*/
+	return false;
 #endif
 	return true;
 }
