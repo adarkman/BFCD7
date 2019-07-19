@@ -72,7 +72,7 @@ struct Vocabulary
 	FindResult find_all_chain(const WCHAR_P _name); 
 	FindResult find_all_chain(WStringHash::UID _name); 
 	// Проверяет наличие слова с нужным CFA в словаре.
-	bool check_CFA(BFCD_OP cfa);
+	bool check_CFA(BFCD_OP* cfa);
 	// Имя слова по WordHeader
 	const wchar_t* getName(WordHeader* wh) { return names->get(wh->name); }
 	// Читаемое имя словаря

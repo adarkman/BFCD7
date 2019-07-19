@@ -115,7 +115,7 @@ Vocabulary::FindResult Vocabulary::find_all_chain(TYPE _name) \
 find_all_chain_T(const WCHAR_P);
 find_all_chain_T(WStringHash::UID);
 
-bool Vocabulary::check_CFA(BFCD_OP cfa)
+bool Vocabulary::check_CFA(BFCD_OP* cfa)
 {
 	Vocabulary* curr = this;
 	bool found=false;
@@ -308,9 +308,9 @@ bool VMThreadData::is_valid_for_execute(void* fn)
 {
 #ifdef __DEBUG__
 	for(int i=1; i<=vocs->_size(); i++)
-		if(vocs->nth(i)->check_CFA((BFCD_OP)fn)) return true;
+		if(vocs->nth(i)->check_CFA((BFCD_OP*)fn)) return true;
 	for(int i=1; i<=local_vocs_order->_size(); i++)
-		if(local_vocs_order->nth(i)->check_CFA((BFCD_OP)fn)) return true;
+		if(local_vocs_order->nth(i)->check_CFA((BFCD_OP*)fn)) return true;
 	return false;
 #endif
 	return true;
@@ -593,7 +593,7 @@ defword(execute)
 	if(data->_trace>=TRACE_EXEC) 
 		printf("\t\t\t\t*** %p %p\n", fn, *fn);
 #ifdef __DEBUG__	
-	if(!data->is_valid_for_execute((void*)*fn))
+	if(!data->is_valid_for_execute(fn))
 		FAILED(VM_EXECUTE_SEGV)
 #endif	
 	if(!data->is_pointer_valid((void*)fn)) // *CFA _должен_ быть в пределах ПУЛА
