@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include "tools.h"
+#include <linux/limits.h>
 
 /*
  * Global system allocator
@@ -143,8 +144,8 @@ bool MemoryManager::createDataFile(BfcdInteger _vm_data_size)
 		return false;
 	}
 #ifndef O_TMPFILE	
-	char path[PATH_MAX],rpath[PATHMAX];
-    snprintf(path, PATH_MAX,  "/proc/self/fd/%d", fd);
+	char path[PATH_MAX],rpath[PATH_MAX];
+    snprintf(path, PATH_MAX,  "/proc/self/fd/%d", data_fd);
 	if(!realpath(path,rpath))
 	{
 		printf ("Error: %s\n", strerror(errno));
